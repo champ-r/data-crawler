@@ -25,7 +25,7 @@ type championDataItem struct {
 	skills []string
 }
 
-func genOverview() *data {
+func genOverview() (*data, int) {
 	res, err := http.Get("https://www.op.gg/champion/statistics")
 	if err != nil {
 		log.Fatal(err)
@@ -42,11 +42,12 @@ func genOverview() *data {
 	}
 
 	verInfo := doc.Find(".champion-index__version").Text()
-	verArr := strings.Split(strings.Trim(verInfo, " "), ` : `)
+	verArr := strings.Split(strings.Trim(verInfo, " \n"), ` : `)
 	d := data{
 		version: verArr[len(verArr)-1],
 	}
 
+	count := 0
 	doc.Find(`.champion-index__champion-list .champion-index__champion-item`).Each(func(i int, s *goquery.Selection) {
 		alias := s.Find(".champion-index__champion-item__name").Text()
 		var positions []string
@@ -58,15 +59,16 @@ func genOverview() *data {
 			c := championListItem{alias: alias}
 			c.positions = positions
 			d.championList = append(d.championList, c)
+			count += len(positions)
 		} else {
 			d.unavailable = append(d.unavailable, alias)
 		}
 	})
 
-	return &d
+	return &d, count
 }
 
-func genPositionData(alias string, position string) championDataItem {
+func genPositionData(alias string, position string) *championDataItem {
 	url := "https://www.op.gg/champion/" + alias + "/statistics/" + position
 	res, err := http.Get(url)
 	if err != nil {
@@ -92,21 +94,25 @@ func genPositionData(alias string, position string) championDataItem {
 		d.skills = append(d.skills, s)
 	})
 
-	return d
+	return &d
 }
 
 func importTask() {
 	fmt.Println("start...")
-	d := genOverview()
-	fmt.Println("got statistics", d)
+	d, count := genOverview()
+	fmt.Println("got champions & positions.")
 
+	chanArr := make(chan *championDataItem, count)
 	for i := 0; i < len(d.championList); i++ {
 		cur := d.championList[i]
-		s := make(chan championDataItem)
+
 		go func() {
-			s <- genPositionData(cur.alias, cur.positions[0])
+			chanArr <- genPositionData(cur.alias, cur.positions[0])
 		}()
-		fmt.Println("champion data: ", s)
+	}
+
+	for el := range chanArr {
+		fmt.Print(el)
 	}
 }
 
