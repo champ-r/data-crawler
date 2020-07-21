@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -94,8 +95,16 @@ func genPositionData(alias string, position string) *championDataItem {
 		d.skills = append(d.skills, s)
 	})
 
-	fmt.Printf("%s %s: done \n", alias, position)
+	fmt.Printf("%s @ %s: done \n", alias, position)
 	return &d
+}
+
+func worker(wg *sync.WaitGroup, alias string, position string) {
+	defer wg.Done()
+
+	time.Sleep(time.Second * 5)
+	d := genPositionData(alias, position)
+	fmt.Println("champion data: ", d)
 }
 
 func importTask() {
@@ -103,22 +112,22 @@ func importTask() {
 	d, count := genOverview()
 	fmt.Printf("got champions & positions, count: %d \n", count)
 
-	chanArr := make(chan *championDataItem, count)
+	wg := new(sync.WaitGroup)
 	cnt := 0
+
 	for _, cur := range d.championList {
 		for _, p := range cur.positions {
 			cnt += 1
 
-			go func(_alias string, _p string, _c int) {
-				time.Sleep(time.Millisecond * 2000)
-				chanArr <- genPositionData(_alias, _p)
-			}(cur.alias, p, cnt)
+			if cnt > 4 {
+				break
+			}
+			wg.Add(1)
+			go worker(wg, cur.alias, p)
 		}
 	}
 
-	for el := range chanArr {
-		fmt.Println(el)
-	}
+	wg.Wait()
 }
 
 func main() {
