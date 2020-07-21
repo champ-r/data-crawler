@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"log"
 	"net/http"
 	"strings"
-
-	"github.com/PuerkitoBio/goquery"
+	"time"
 )
 
 type championListItem struct {
@@ -77,7 +77,7 @@ func genPositionData(alias string, position string) *championDataItem {
 
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		log.Fatalf("[op.gg]: request champion detail %s error: %d %s", alias, res.StatusCode, res.Status)
+		log.Fatalf("[op.gg]: %s @ %s error: %s", alias, position, res.Status)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
@@ -94,25 +94,30 @@ func genPositionData(alias string, position string) *championDataItem {
 		d.skills = append(d.skills, s)
 	})
 
+	fmt.Printf("%s %s: done \n", alias, position)
 	return &d
 }
 
 func importTask() {
 	fmt.Println("start...")
 	d, count := genOverview()
-	fmt.Println("got champions & positions.")
+	fmt.Printf("got champions & positions, count: %d \n", count)
 
 	chanArr := make(chan *championDataItem, count)
-	for i := 0; i < len(d.championList); i++ {
-		cur := d.championList[i]
+	cnt := 0
+	for _, cur := range d.championList {
+		for _, p := range cur.positions {
+			cnt += 1
 
-		go func() {
-			chanArr <- genPositionData(cur.alias, cur.positions[0])
-		}()
+			go func(_alias string, _p string, _c int) {
+				time.Sleep(time.Millisecond * 2000)
+				chanArr <- genPositionData(_alias, _p)
+			}(cur.alias, p, cnt)
+		}
 	}
 
 	for el := range chanArr {
-		fmt.Print(el)
+		fmt.Println(el)
 	}
 }
 
