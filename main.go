@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
@@ -23,6 +24,7 @@ type data struct {
 
 type championDataItem struct {
 	alias  string
+	position string
 	skills []string
 }
 
@@ -69,7 +71,7 @@ func genOverview() (*data, int) {
 	return &d, count
 }
 
-func genPositionData(alias string, position string) *championDataItem {
+func genPositionData(alias string, position string) (*championDataItem, error) {
 	url := "https://www.op.gg/champion/" + alias + "/statistics/" + position
 	res, err := http.Get(url)
 	if err != nil {
@@ -78,7 +80,8 @@ func genPositionData(alias string, position string) *championDataItem {
 
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		log.Fatalf("[op.gg]: %s @ %s error: %s", alias, position, res.Status)
+		fmt.Printf("[op.gg]: %s @ %s error: %s \n", alias, position, res.Status)
+		return nil, errors.New(res.Status)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
@@ -88,6 +91,7 @@ func genPositionData(alias string, position string) *championDataItem {
 
 	d := championDataItem{
 		alias: alias,
+		position: position,
 	}
 	// skills
 	doc.Find(`.champion-overview__table--summonerspell > tbody:last-child .champion-stats__list .champion-stats__list__item span`).Each(func(i int, selection *goquery.Selection) {
@@ -95,16 +99,20 @@ func genPositionData(alias string, position string) *championDataItem {
 		d.skills = append(d.skills, s)
 	})
 
-	fmt.Printf("%s @ %s: done \n", alias, position)
-	return &d
+	return &d, nil
 }
 
-func worker(wg *sync.WaitGroup, alias string, position string) {
+func worker(wg *sync.WaitGroup, alias string, position string, index int) {
 	defer wg.Done()
 
-	time.Sleep(time.Second * 5)
-	d := genPositionData(alias, position)
-	fmt.Println("champion data: ", d)
+	time.Sleep(time.Second * 1)
+
+	d, _ := genPositionData(alias, position)
+	if d != nil {
+		fmt.Printf("No. %d champion data: %s \n", index, d)
+	} else {
+		fmt.Printf("No. %d failed, champion %s \n", index, alias)
+	}
 }
 
 func importTask() {
@@ -118,16 +126,18 @@ func importTask() {
 	for _, cur := range d.championList {
 		for _, p := range cur.positions {
 			cnt += 1
-
-			if cnt > 4 {
-				break
+			if cnt % 6 == 0 {
+				time.Sleep(time.Second * 6)
 			}
+
 			wg.Add(1)
-			go worker(wg, cur.alias, p)
+			go worker(wg, cur.alias, p, cnt)
 		}
 	}
 
 	wg.Wait()
+
+	fmt.Println("All finished.")
 }
 
 func main() {
