@@ -116,6 +116,7 @@ func worker(wg *sync.WaitGroup, alias string, position string, index int) {
 }
 
 func importTask() {
+	start := time.Now()
 	fmt.Println("start...")
 	d, count := genOverview()
 	fmt.Printf("got champions & positions, count: %d \n", count)
@@ -136,8 +137,8 @@ func importTask() {
 	}
 
 	wg.Wait()
-
-	fmt.Println("All finished.")
+	duration := time.Since(start)
+	fmt.Println("All finished, took ", duration)
 }
 
 func main() {
