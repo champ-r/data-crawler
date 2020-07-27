@@ -23,9 +23,10 @@ type data struct {
 }
 
 type championDataItem struct {
-	alias  string
+	alias    string
 	position string
-	skills []string
+	skills   []string
+	index    int
 }
 
 func genOverview() (*data, int) {
@@ -80,7 +81,6 @@ func genPositionData(alias string, position string) (*championDataItem, error) {
 
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		fmt.Printf("[op.gg]: %s @ %s error: %s \n", alias, position, res.Status)
 		return nil, errors.New(res.Status)
 	}
 
@@ -90,7 +90,7 @@ func genPositionData(alias string, position string) (*championDataItem, error) {
 	}
 
 	d := championDataItem{
-		alias: alias,
+		alias:    alias,
 		position: position,
 	}
 	// skills
@@ -102,43 +102,67 @@ func genPositionData(alias string, position string) (*championDataItem, error) {
 	return &d, nil
 }
 
-func worker(wg *sync.WaitGroup, alias string, position string, index int) {
-	defer wg.Done()
-
+func worker(alias string, position string, index int) *championDataItem {
 	time.Sleep(time.Second * 1)
 
+	fmt.Printf("⌛️️ No.%d, %s @ %s\n", index, alias, position)
+
 	d, _ := genPositionData(alias, position)
-	if d != nil {
-		fmt.Printf("No. %d champion data: %s \n", index, d)
-	} else {
-		fmt.Printf("No. %d failed, champion %s \n", index, alias)
+	result := championDataItem{
+		alias:    d.alias,
+		position: d.position,
+		index:    index,
 	}
+
+	if d != nil {
+		result.skills = d.skills
+	}
+
+	fmt.Printf("🌟 %d, %+v\n", index, d)
+	return &result
 }
 
 func importTask() {
 	start := time.Now()
-	fmt.Println("start...")
+	fmt.Println("Start...")
 	d, count := genOverview()
-	fmt.Printf("got champions & positions, count: %d \n", count)
+	fmt.Printf("Got champions & positions, count: %d \n", count)
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
+	ch := make(chan championDataItem, count)
 
 	for _, cur := range d.championList {
 		for _, p := range cur.positions {
 			cnt += 1
-			if cnt % 6 == 0 {
-				time.Sleep(time.Second * 6)
+			if cnt%7 == 0 {
+				time.Sleep(time.Second * 5)
 			}
 
 			wg.Add(1)
-			go worker(wg, cur.alias, p, cnt)
+			go func(_alias string, _p string, _cnt int) {
+				ch <- *worker(_alias, _p, _cnt)
+				wg.Done()
+			}(cur.alias, p, cnt)
 		}
 	}
 
 	wg.Wait()
+	close(ch)
+
+	failed := 0
+	for champion := range ch {
+		flag := "🎉"
+		if champion.skills == nil {
+			flag = "❌"
+			failed += 1
+		}
+
+		fmt.Printf("%s %+v\n", flag, champion)
+	}
+
 	duration := time.Since(start)
-	fmt.Println("All finished, took ", duration)
+	fmt.Printf("All finished, success: %d, failed: %d, took %s \n", count - failed, failed, duration)
 }
 
 func main() {
