@@ -112,8 +112,8 @@ func worker(alias string, position string, index int) *ChampionDataItem {
 
 	d, _ := genPositionData(alias, position)
 	result := ChampionDataItem{
-		Alias:    d.Alias,
-		Position: d.Position,
+		Alias:    alias,
+		Position: position,
 		Index:    index,
 	}
 
