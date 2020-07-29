@@ -34,6 +34,94 @@ type ChampionDataItem struct {
 	Skills   []string `json:"skills"`
 }
 
+type ChampionItem struct {
+	Version string
+	Id      string
+	Key     string
+	Name    string
+	Title   string
+	Blurb   string
+	Info    struct {
+		Attack     int
+		Defense    int
+		Magic      int
+		Difficulty int
+	}
+	Image struct {
+		Full   string
+		Sprite string
+		Group  string
+		X      int
+		Y      int
+		W      int
+		H      int
+	}
+	Tags    []string
+	Partype string
+	Stats   struct {
+		Hp                   int
+		Hpperlevel           int
+		Mp                   int
+		Mpperlevel           int
+		Movespeed            int
+		Armor                int
+		Armorperlevel        int
+		Spellblock           int
+		Spellblockperlevel   int
+		Attackrange          int
+		Hpregen              int
+		Hpregenperlevel      int
+		Mpregen              int
+		Mpregenperlevel      int
+		Crit                 int
+		Critperlevel         int
+		Attackdamage         int
+		Attackdamageperlevel int
+		Attackspeedperlevel  float32
+		Attackspeed          float32
+	}
+}
+
+type ChampionListResp struct {
+	Type    string
+	Format  string
+	Version string
+	Data    map[string]ChampionItem
+}
+
+func getChampionList() {
+	dataDragonUrl := "https://ddragon.leagueoflegends.com"
+	res, err := http.Get(dataDragonUrl + "/api/versions.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		log.Fatal("Request lol version failed.")
+	}
+
+	body, _ := ioutil.ReadAll(res.Body)
+	var versionArr []string
+	_ = json.Unmarshal(body, &versionArr)
+	version := versionArr[0]
+
+	res, err = http.Get(dataDragonUrl + "/cdn/" + version + "/data/en_US/champion.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		log.Fatal("Request lol version failed.")
+	}
+
+	body, _ = ioutil.ReadAll(res.Body)
+	var resp ChampionListResp
+	_ = json.Unmarshal(body, &resp)
+	fmt.Println(len(resp.Data))
+}
+
 func genOverview() (*OverviewData, int) {
 	res, err := http.Get("https://www.op.gg/champion/statistics")
 	if err != nil {
@@ -42,7 +130,7 @@ func genOverview() (*OverviewData, int) {
 
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		log.Fatalf("[op.gg]: request overview error: %d %s", res.StatusCode, res.Status)
+		log.Fatalf("[OP.GG]: request overview error: %d %s", res.StatusCode, res.Status)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
@@ -187,5 +275,6 @@ func importTask() {
 }
 
 func main() {
+	//getChampionList()
 	importTask()
 }
