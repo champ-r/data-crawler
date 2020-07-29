@@ -18,7 +18,7 @@ type ChampionListItem struct {
 	Positions []string `json:"positions"`
 }
 
-type data struct {
+type OverviewData struct {
 	Version      string
 	ChampionList []ChampionListItem
 	Unavailable  []string
@@ -32,7 +32,7 @@ type ChampionDataItem struct {
 	Skills   []string `json:"skills"`
 }
 
-func genOverview() (*data, int) {
+func genOverview() (*OverviewData, int) {
 	res, err := http.Get("https://www.op.gg/champion/statistics")
 	if err != nil {
 		log.Fatal(err)
@@ -50,7 +50,7 @@ func genOverview() (*data, int) {
 
 	verInfo := doc.Find(".champion-index__version").Text()
 	verArr := strings.Split(strings.Trim(verInfo, " \n"), ` : `)
-	d := data{
+	d := OverviewData{
 		Version: verArr[len(verArr)-1],
 	}
 
