@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -155,6 +157,9 @@ func importTask() {
 	wg.Wait()
 	close(ch)
 
+	outputPath := filepath.Join(".", "output", "op.gg")
+	_ = os.MkdirAll(outputPath, os.ModePerm)
+
 	failed := 0
 	for champion := range ch {
 		flag := "🎉"
@@ -163,7 +168,7 @@ func importTask() {
 
 		if done {
 			file, _ := json.MarshalIndent(champion, "", " ")
-			fileName := champion.Alias + "-" + champion.Position + ".json"
+			fileName := outputPath + "/" + champion.Alias + "-" + champion.Position + ".json"
 			wErr := ioutil.WriteFile(fileName, file, 0644)
 
 			if wErr != nil {
