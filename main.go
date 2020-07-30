@@ -259,26 +259,27 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 	_ = os.MkdirAll(outputPath, os.ModePerm)
 
 	failed := 0
+	r := make(map[string][]ChampionDataItem)
+
 	for champion := range ch {
-		flag := "🎉"
-		done := champion.Skills != nil
-		champion.Version = d.Version
+		if champion.Skills != nil {
+			champion.Version = d.Version
+			r[champion.Alias] = append(r[champion.Alias], champion)
 
-		if done {
-			file, _ := json.MarshalIndent(champion, "", " ")
-			fileName := outputPath + "/" + champion.Alias + "-" + champion.Position + ".json"
-			wErr := ioutil.WriteFile(fileName, file, 0644)
-
-			if wErr != nil {
-				log.Fatal(wErr)
-			}
-		} else {
-			flag = "❌"
-			failed += 1
+			//file, _ := json.MarshalIndent(champion, "", " ")
+			//fileName := outputPath + "/" + champion.Alias + "-" + champion.Position + ".json"
+			//wErr := ioutil.WriteFile(fileName, file, 0644)
+			//
+			//if wErr != nil {
+			//	log.Fatal(wErr)
+			//}
 		}
-
-		fmt.Printf("%s %s @ %s\n", flag, champion.Alias, champion.Position)
 	}
+
+	fmt.Println(r)
+	file, _ := json.MarshalIndent(r, "", " ")
+	fileName := outputPath + "/all.json"
+	_ = ioutil.WriteFile(fileName, file, 0644)
 
 	duration := time.Since(start)
 	fmt.Printf("🟢 All finished, success: %d, failed: %d, took %s \n", count-failed, failed, duration)
