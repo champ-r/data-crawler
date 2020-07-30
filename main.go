@@ -16,7 +16,9 @@ import (
 )
 
 type ChampionListItem struct {
+	Id        string   `json:"id"`
 	Alias     string   `json:"alias"`
+	Name      string   `json:"name"`
 	Positions []string `json:"positions"`
 }
 
@@ -28,8 +30,10 @@ type OverviewData struct {
 
 type ChampionDataItem struct {
 	Index    int      `json:"index"`
+	Id       string   `json:"id"`
 	Version  string   `json:"version"`
 	Alias    string   `json:"alias"`
+	Name     string   `json:"name"`
 	Position string   `json:"position"`
 	Skills   []string `json:"skills"`
 }
@@ -89,9 +93,10 @@ type ChampionListResp struct {
 	Data    map[string]ChampionItem
 }
 
-func getChampionList() {
-	dataDragonUrl := "https://ddragon.leagueoflegends.com"
-	res, err := http.Get(dataDragonUrl + "/api/versions.json")
+const DataDragonUrl = "https://ddragon.leagueoflegends.com"
+
+func getChampionList() (*ChampionListResp, string) {
+	res, err := http.Get(DataDragonUrl + "/api/versions.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -106,7 +111,7 @@ func getChampionList() {
 	_ = json.Unmarshal(body, &versionArr)
 	version := versionArr[0]
 
-	res, err = http.Get(dataDragonUrl + "/cdn/" + version + "/data/en_US/champion.json")
+	res, err = http.Get(DataDragonUrl + "/cdn/" + version + "/data/en_US/champion.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -119,10 +124,12 @@ func getChampionList() {
 	body, _ = ioutil.ReadAll(res.Body)
 	var resp ChampionListResp
 	_ = json.Unmarshal(body, &resp)
-	fmt.Println(len(resp.Data))
+
+	fmt.Printf("🤖 Got official champion list, total %d \n", len(resp.Data))
+	return &resp, version
 }
 
-func genOverview() (*OverviewData, int) {
+func genOverview(allChampions map[string]ChampionItem, aliasList map[string]string) (*OverviewData, int) {
 	res, err := http.Get("https://www.op.gg/champion/statistics")
 	if err != nil {
 		log.Fatal(err)
@@ -146,14 +153,15 @@ func genOverview() (*OverviewData, int) {
 
 	count := 0
 	doc.Find(`.champion-index__champion-list .champion-index__champion-item`).Each(func(i int, s *goquery.Selection) {
-		alias := s.Find(".champion-index__champion-item__name").Text()
+		name := s.Find(".champion-index__champion-item__name").Text()
+		alias := aliasList[name]
 		var positions []string
 		s.Find(".champion-index__champion-item__position > span").Each(func(i int, selection *goquery.Selection) {
 			position := selection.Text()
 			positions = append(positions, position)
 		})
 		if len(positions) > 0 {
-			c := ChampionListItem{Alias: alias}
+			c := ChampionListItem{Alias: alias, Name: name, Id: allChampions[alias].Key}
 			c.Positions = positions
 			d.ChampionList = append(d.ChampionList, c)
 			count += len(positions)
@@ -195,9 +203,10 @@ func genPositionData(alias string, position string) (*ChampionDataItem, error) {
 	return &d, nil
 }
 
-func worker(alias string, position string, index int) *ChampionDataItem {
+func worker(champ ChampionListItem, position string, index int) *ChampionDataItem {
 	time.Sleep(time.Second * 1)
 
+	alias := champ.Alias
 	fmt.Printf("⌛️️ No.%d, %s @ %s\n", index, alias, position)
 
 	d, _ := genPositionData(alias, position)
@@ -205,27 +214,28 @@ func worker(alias string, position string, index int) *ChampionDataItem {
 		Alias:    alias,
 		Position: position,
 		Index:    index,
+		Id:       champ.Id,
+		Name:     champ.Name,
 	}
 
 	if d != nil {
 		result.Skills = d.Skills
 	}
 
-	fmt.Printf("🌟 %d, %+v\n", index, d)
+	fmt.Printf("🌟 No.%d, %s @ %s\n", index, alias, position)
 	return &result
 }
 
-func importTask() {
+func importTask(allChampions map[string]ChampionItem, aliasList map[string]string) {
 	start := time.Now()
 	fmt.Println("🤖 Start...")
-	d, count := genOverview()
+	d, count := genOverview(allChampions, aliasList)
 	fmt.Printf("🤪 Got champions & positions, count: %d \n", count)
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
 	ch := make(chan ChampionDataItem, count)
 
-	//outLoop:
 	for _, cur := range d.ChampionList {
 		for _, p := range cur.Positions {
 			cnt += 1
@@ -235,10 +245,10 @@ func importTask() {
 			}
 
 			wg.Add(1)
-			go func(_alias string, _p string, _cnt int) {
-				ch <- *worker(_alias, _p, _cnt)
+			go func(_cur ChampionListItem, _p string, _cnt int) {
+				ch <- *worker(_cur, _p, _cnt)
 				wg.Done()
-			}(cur.Alias, p, cnt)
+			}(cur, p, cnt)
 		}
 	}
 
@@ -267,7 +277,7 @@ func importTask() {
 			failed += 1
 		}
 
-		fmt.Printf("%s %+v\n", flag, champion)
+		fmt.Printf("%s %s @ %s\n", flag, champion.Alias, champion.Position)
 	}
 
 	duration := time.Since(start)
@@ -275,6 +285,12 @@ func importTask() {
 }
 
 func main() {
-	//getChampionList()
-	importTask()
+	allChampionData, _ := getChampionList()
+
+	var championAliasList = make(map[string]string)
+	for k, v := range allChampionData.Data {
+		championAliasList[v.Name] = k
+	}
+
+	importTask(allChampionData.Data, championAliasList)
 }
