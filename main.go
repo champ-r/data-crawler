@@ -157,7 +157,7 @@ func genOverview(allChampions map[string]ChampionItem, aliasList map[string]stri
 		alias := aliasList[name]
 		var positions []string
 		s.Find(".champion-index__champion-item__position > span").Each(func(i int, selection *goquery.Selection) {
-			position := selection.Text()
+			position := strings.ToLower(selection.Text())
 			positions = append(positions, position)
 		})
 		if len(positions) > 0 {
