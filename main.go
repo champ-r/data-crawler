@@ -265,20 +265,21 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 		if champion.Skills != nil {
 			champion.Version = d.Version
 			r[champion.Alias] = append(r[champion.Alias], champion)
-
-			//file, _ := json.MarshalIndent(champion, "", " ")
-			//fileName := outputPath + "/" + champion.Alias + "-" + champion.Position + ".json"
-			//wErr := ioutil.WriteFile(fileName, file, 0644)
-			//
-			//if wErr != nil {
-			//	log.Fatal(wErr)
-			//}
 		}
 	}
 
-	fmt.Println(r)
-	file, _ := json.MarshalIndent(r, "", " ")
-	fileName := outputPath + "/all.json"
+	for k, v := range r {
+		file, _ := json.MarshalIndent(v, "", " ")
+		fileName := outputPath + "/" + k + ".json"
+		wErr := ioutil.WriteFile(fileName, file, 0644)
+
+		if wErr != nil {
+			log.Fatal(wErr)
+		}
+	}
+
+	file, _ := json.MarshalIndent(allChampions, "", " ")
+	fileName := "output/all.json"
 	_ = ioutil.WriteFile(fileName, file, 0644)
 
 	duration := time.Since(start)
