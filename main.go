@@ -10,16 +10,17 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 )
 
 type ChampionListItem struct {
-	Id        string   `json:"id"`
-	Alias     string   `json:"alias"`
-	Name      string   `json:"name"`
-	Positions []string `json:"positions"`
+	Id        string
+	Alias     string
+	Name      string
+	Positions []string
 }
 
 type OverviewData struct {
@@ -29,13 +30,14 @@ type OverviewData struct {
 }
 
 type ChampionDataItem struct {
-	Index    int      `json:"index"`
-	Id       string   `json:"id"`
-	Version  string   `json:"version"`
-	Alias    string   `json:"alias"`
-	Name     string   `json:"name"`
-	Position string   `json:"position"`
-	Skills   []string `json:"skills"`
+	Index    int
+	Id       string
+	Version  string
+	Alias    string
+	Name     string
+	Position string
+	Skills   []string
+	Spells   []string
 }
 
 type ChampionItem struct {
@@ -200,6 +202,17 @@ func genPositionData(alias string, position string) (*ChampionDataItem, error) {
 		d.Skills = append(d.Skills, s)
 	})
 
+	r := regexp.MustCompile("Summoner(.*)\\.png")
+	doc.Find(`.champion-overview__table--summonerspell > tbody`).First().Find(`img`).Each(func(i int, selection *goquery.Selection) {
+		src, _ := selection.Attr("src")
+
+		if len(src) > 0 {
+			result := r.FindStringSubmatch(src)
+			s := result[len(result)-1]
+			d.Spells = append(d.Spells, s)
+		}
+	})
+
 	return &d, nil
 }
 
@@ -216,6 +229,7 @@ func worker(champ ChampionListItem, position string, index int) *ChampionDataIte
 		Index:    index,
 		Id:       champ.Id,
 		Name:     champ.Name,
+		Spells:   d.Spells,
 	}
 
 	if d != nil {
@@ -236,9 +250,14 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 	cnt := 0
 	ch := make(chan ChampionDataItem, count)
 
+//output:
 	for _, cur := range d.ChampionList {
 		for _, p := range cur.Positions {
 			cnt += 1
+
+			//if cnt > 3 {
+			//	break output
+			//}
 
 			if cnt%7 == 0 {
 				time.Sleep(time.Second * 5)
@@ -269,7 +288,7 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 	}
 
 	for k, v := range r {
-		file, _ := json.MarshalIndent(v, "", " ")
+		file, _ := json.MarshalIndent(v, "", "  ")
 		fileName := outputPath + "/" + k + ".json"
 		wErr := ioutil.WriteFile(fileName, file, 0644)
 
@@ -278,8 +297,8 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 		}
 	}
 
-	file, _ := json.MarshalIndent(allChampions, "", " ")
-	fileName := "output/all.json"
+	file, _ := json.MarshalIndent(allChampions, "", "  ")
+	fileName := "output/index.json"
 	_ = ioutil.WriteFile(fileName, file, 0644)
 
 	duration := time.Since(start)
