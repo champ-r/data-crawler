@@ -47,6 +47,15 @@ type ItemBuild struct {
 	Blocks              []ItemBuildBlockItem `json:"blocks"`
 }
 
+type RuneItem struct {
+	Name            string `json:"name"`
+	PickCount       string `json:"pickCount"`
+	WinRate         string `json:"winRate"`
+	PrimaryStyleId  int    `json:"primaryStyleId"`
+	SubStyleId      int    `json:"subStyleId"`
+	SelectedPerkIds []int  `json:"selectedPerkIds"`
+}
+
 type ChampionDataItem struct {
 	Index      int         `json:"index"`
 	Id         string      `json:"id"`
@@ -57,6 +66,7 @@ type ChampionDataItem struct {
 	Skills     []string    `json:"skills"`
 	Spells     []string    `json:"spells"`
 	ItemBuilds []ItemBuild `json:"itemBuilds"`
+	Runes      []RuneItem  `json:"runes"`
 }
 
 type ChampionItem struct {
@@ -127,7 +137,7 @@ func MatchSpellName(src string) string {
 	return s
 }
 
-func MatchItemId(src string) string {
+func MatchId(src string) string {
 	if len(src) == 0 {
 		return ""
 	}
@@ -135,7 +145,6 @@ func MatchItemId(src string) string {
 	r := regexp.MustCompile("\\/(\\d+)\\.png")
 	result := r.FindStringSubmatch(src)
 	s := strings.ToLower(result[len(result)-1])
-
 	return s
 }
 
@@ -254,12 +263,12 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 		Position: position,
 	}
 
-	doc.Find(`.champion-overview__table--summonerspell > tbody:last-child .champion-stats__list .champion-stats__list__item span`).Each(func(i int, selection *goquery.Selection) {
+	doc.Find(`.champion-overview__table--summonerspell > tbody:last-child .champion-stats__list .champion-stats__list__item span`).Each(func(_ int, selection *goquery.Selection) {
 		s := selection.Text()
 		d.Skills = append(d.Skills, s)
 	})
 
-	doc.Find(`.champion-overview__table--summonerspell > tbody`).First().Find(`img`).Each(func(i int, selection *goquery.Selection) {
+	doc.Find(`.champion-overview__table--summonerspell > tbody`).First().Find(`img`).Each(func(_ int, selection *goquery.Selection) {
 		src, _ := selection.Attr("src")
 		s := MatchSpellName(src)
 		if len(s) > 0 {
@@ -273,19 +282,20 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 		AssociatedChampions: []int{id},
 	}
 
-	doc.Find(`.champion-overview__table:nth-child(2) .champion-overview__row--first`).Each(func(i int, selection *goquery.Selection) {
+	// item builds
+	doc.Find(`.champion-overview__table:nth-child(2) .champion-overview__row--first`).Each(func(_ int, selection *goquery.Selection) {
 		var block ItemBuildBlockItem
 		block.Type = strings.TrimSpace(selection.Find(`th.champion-overview__sub-header`).Text())
 
 		var itemIds []string
 		selection.Find("li.champion-stats__list__item img").Each(func(i int, img *goquery.Selection) {
 			src, _ := img.Attr("src")
-			id := MatchItemId(src)
+			id := MatchId(src)
 			itemIds = NoRepeatPush(id, itemIds)
 		})
-		selection.NextUntil(`tr.champion-overview__row--first`).Find("li.champion-stats__list__item img").Each(func(i int, img *goquery.Selection) {
+		selection.NextUntil(`tr.champion-overview__row--first`).Find("li.champion-stats__list__item img").Each(func(_ int, img *goquery.Selection) {
 			src, _ := img.Attr("src")
-			id := MatchItemId(src)
+			id := MatchId(src)
 			itemIds = NoRepeatPush(id, itemIds)
 		})
 
@@ -300,6 +310,36 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 	})
 
 	d.ItemBuilds = append(d.ItemBuilds, build)
+
+	// runes
+	doc.Find(`[class*=ChampionKeystoneRune] tr`).Each(func(_ int, tr *goquery.Selection) {
+		var runeItem RuneItem
+
+		tr.Find(`.perk-page__item--active img`).Each(func(_ int, img *goquery.Selection) {
+			src, _ := img.Attr(`src`)
+			sId, _ := strconv.Atoi(MatchId(src))
+			runeItem.SelectedPerkIds = append(runeItem.SelectedPerkIds, sId)
+		})
+
+		tr.Find(`.fragment__detail img.active`).Each(func(_ int, img *goquery.Selection) {
+			src, _ := img.Attr(`src`)
+			fId, _ := strconv.Atoi(MatchId(src))
+			runeItem.SelectedPerkIds = append(runeItem.SelectedPerkIds, fId)
+		})
+
+		pIdSrc, _ := tr.Find(`.perk-page__item--mark img`).First().Attr(`src`)
+		runeItem.PrimaryStyleId, _ = strconv.Atoi(MatchId(pIdSrc))
+
+		sIdSrc, _ := tr.Find(`.perk-page__item--mark img`).Last().Attr(`src`)
+		runeItem.SubStyleId, _ = strconv.Atoi(MatchId(sIdSrc))
+
+		runeItem.PickCount = tr.Find(`.champion-overview__stats--pick .pick-ratio__text`).Next().Next().Text()
+		runeItem.WinRate = tr.Find(`.champion-overview__stats--pick .win-ratio__text`).Next().Text()
+
+		runeItem.Name = "[OP.GG] " + alias + "@" + position + " - " + runeItem.WinRate + ", " + runeItem.PickCount
+
+		d.Runes = append(d.Runes, runeItem)
+	})
 
 	return &d, nil
 }
@@ -337,7 +377,7 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 		for _, p := range cur.Positions {
 			cnt += 1
 
-			//if cnt > 3 {
+			//if cnt > 8 {
 			//	break output
 			//}
 
