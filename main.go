@@ -11,93 +11,112 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
 
 type ChampionListItem struct {
-	Id        string
-	Alias     string
-	Name      string
-	Positions []string
+	Id        string   `json:"id"`
+	Alias     string   `json:"alias"`
+	Name      string   `json:"name"`
+	Positions []string `json:"positions"`
 }
 
 type OverviewData struct {
-	Version      string
-	ChampionList []ChampionListItem
-	Unavailable  []string
+	Version      string             `json:"version"`
+	ChampionList []ChampionListItem `json:"championlist"`
+	Unavailable  []string           `json:"unavailable"`
+}
+
+type BlockItem struct {
+	Id    string `json:"id"`
+	Count int    `json:"count"`
+}
+
+type ItemBuildBlockItem struct {
+	Type  string      `json:"type"`
+	Items []BlockItem `json:"items"`
+}
+
+type ItemBuild struct {
+	Title               string               `json:"title"`
+	AssociatedMaps      []int                `json:"associatedMaps"`
+	AssociatedChampions []int                `json:"associatedChampions"`
+	Blocks              []ItemBuildBlockItem `json:"blocks"`
 }
 
 type ChampionDataItem struct {
-	Index    int
-	Id       string
-	Version  string
-	Alias    string
-	Name     string
-	Position string
-	Skills   []string
-	Spells   []string
+	Index      int         `json:"index"`
+	Id         string      `json:"id"`
+	Version    string      `json:"version"`
+	Alias      string      `json:"alias"`
+	Name       string      `json:"name"`
+	Position   string      `json:"position"`
+	Skills     []string    `json:"skills"`
+	Spells     []string    `json:"spells"`
+	ItemBuilds []ItemBuild `json:"itemBuilds"`
 }
 
 type ChampionItem struct {
-	Version string
-	Id      string
-	Key     string
-	Name    string
-	Title   string
-	Blurb   string
+	Version string `json:"version"`
+	Id      string `json:"id"`
+	Key     string `json:"key"`
+	Name    string `json:"name"`
+	Title   string `json:"title"`
+	Blurb   string `json:"blurb"`
 	Info    struct {
-		Attack     int
-		Defense    int
-		Magic      int
-		Difficulty int
-	}
+		Attack     int `json:"attack"`
+		Defense    int `json:"defense"`
+		Magic      int `json:"magic"`
+		Difficulty int `json:"difficulty"`
+	} `json:"info"`
 	Image struct {
-		Full   string
-		Sprite string
-		Group  string
-		X      int
-		Y      int
-		W      int
-		H      int
-	}
-	Tags    []string
-	Partype string
+		Full   string `json:full`
+		Sprite string `json:sprite`
+		Group  string `json:group`
+		X      int    `json:x`
+		Y      int    `json:y`
+		W      int    `json:w`
+		H      int    `json:h`
+	} `json:image`
+	Tags    []string `json:"tags"`
+	Partype string   `json:"partype"`
 	Stats   struct {
-		Hp                   int
-		Hpperlevel           int
-		Mp                   int
-		Mpperlevel           int
-		Movespeed            int
-		Armor                int
-		Armorperlevel        int
-		Spellblock           int
-		Spellblockperlevel   int
-		Attackrange          int
-		Hpregen              int
-		Hpregenperlevel      int
-		Mpregen              int
-		Mpregenperlevel      int
-		Crit                 int
-		Critperlevel         int
-		Attackdamage         int
-		Attackdamageperlevel int
-		Attackspeedperlevel  float32
-		Attackspeed          float32
-	}
+		Hp                   int     `json:"hp"`
+		Hpperlevel           int     `json:"hpperlevel"`
+		Mp                   int     `json:"mp"`
+		Mpperlevel           int     `json:"mpperlevel"`
+		Movespeed            int     `json:"movespeed"`
+		Armor                int     `json:"armor"`
+		Armorperlevel        int     `json:"armorperlevel"`
+		Spellblock           int     `json:"spellblock"`
+		Spellblockperlevel   int     `json:"spellblockperlevel"`
+		Attackrange          int     `json:"attackrange"`
+		Hpregen              int     `json:"hpregen"`
+		Hpregenperlevel      int     `json:"hpregenperlevel"`
+		Mpregen              int     `json:"mpregen"`
+		Mpregenperlevel      int     `json:"mpregenperlevel"`
+		Crit                 int     `json:"crit"`
+		Critperlevel         int     `json:"critperlevel"`
+		Attackdamage         int     `json:"attackdamage"`
+		Attackdamageperlevel int     `json:"attackdamageperlevel"`
+		Attackspeedperlevel  float32 `json:"attackspeedperlevel"`
+		Attackspeed          float32 `json:"attackspeed"`
+	} `json:"stats"`
 }
 
 type ChampionListResp struct {
-	Type    string
-	Format  string
-	Version string
-	Data    map[string]ChampionItem
+	Type    string                  `json:"type"`
+	Format  string                  `json:"format"`
+	Version string                  `json:"version"`
+	Data    map[string]ChampionItem `json:"data"`
 }
 
 const DataDragonUrl = "https://ddragon.leagueoflegends.com"
 
-func getSpellName(src string) string {
+func MatchSpellName(src string) string {
 	if len(src) == 0 {
 		return ""
 	}
@@ -106,6 +125,33 @@ func getSpellName(src string) string {
 	result := r.FindStringSubmatch(src)
 	s := strings.ToLower(result[len(result)-1])
 	return s
+}
+
+func MatchItemId(src string) string {
+	if len(src) == 0 {
+		return ""
+	}
+
+	r := regexp.MustCompile("\\/(\\d+)\\.png")
+	result := r.FindStringSubmatch(src)
+	s := strings.ToLower(result[len(result)-1])
+
+	return s
+}
+
+func NoRepeatPush(el string, arr []string) []string {
+	index := -1
+	for idx, v := range arr {
+		if v == el {
+			index = idx
+			break
+		}
+	}
+
+	if index <= 0 {
+		return append(arr, el)
+	}
+	return arr
 }
 
 func getChampionList() (*ChampionListResp, string) {
@@ -186,7 +232,7 @@ func genOverview(allChampions map[string]ChampionItem, aliasList map[string]stri
 	return &d, count
 }
 
-func genPositionData(alias string, position string) (*ChampionDataItem, error) {
+func genPositionData(alias string, position string, id int) (*ChampionDataItem, error) {
 	url := "https://www.op.gg/champion/" + alias + "/statistics/" + position
 	res, err := http.Get(url)
 	if err != nil {
@@ -207,7 +253,7 @@ func genPositionData(alias string, position string) (*ChampionDataItem, error) {
 		Alias:    alias,
 		Position: position,
 	}
-	// skills
+
 	doc.Find(`.champion-overview__table--summonerspell > tbody:last-child .champion-stats__list .champion-stats__list__item span`).Each(func(i int, selection *goquery.Selection) {
 		s := selection.Text()
 		d.Skills = append(d.Skills, s)
@@ -215,11 +261,45 @@ func genPositionData(alias string, position string) (*ChampionDataItem, error) {
 
 	doc.Find(`.champion-overview__table--summonerspell > tbody`).First().Find(`img`).Each(func(i int, selection *goquery.Selection) {
 		src, _ := selection.Attr("src")
-		s := getSpellName(src)
+		s := MatchSpellName(src)
 		if len(s) > 0 {
 			d.Spells = append(d.Spells, s)
 		}
 	})
+
+	build := ItemBuild{
+		Title:               "[OP.GG] " + alias + " " + position,
+		AssociatedMaps:      []int{11, 12},
+		AssociatedChampions: []int{id},
+	}
+
+	doc.Find(`.champion-overview__table:nth-child(2) .champion-overview__row--first`).Each(func(i int, selection *goquery.Selection) {
+		var block ItemBuildBlockItem
+		block.Type = strings.TrimSpace(selection.Find(`th.champion-overview__sub-header`).Text())
+
+		var itemIds []string
+		selection.Find("li.champion-stats__list__item img").Each(func(i int, img *goquery.Selection) {
+			src, _ := img.Attr("src")
+			id := MatchItemId(src)
+			itemIds = NoRepeatPush(id, itemIds)
+		})
+		selection.NextUntil(`tr.champion-overview__row--first`).Find("li.champion-stats__list__item img").Each(func(i int, img *goquery.Selection) {
+			src, _ := img.Attr("src")
+			id := MatchItemId(src)
+			itemIds = NoRepeatPush(id, itemIds)
+		})
+
+		for _, val := range itemIds {
+			item := BlockItem{
+				Id:    val,
+				Count: 1,
+			}
+			block.Items = append(block.Items, item)
+		}
+		build.Blocks = append(build.Blocks, block)
+	})
+
+	d.ItemBuilds = append(d.ItemBuilds, build)
 
 	return &d, nil
 }
@@ -230,7 +310,8 @@ func worker(champ ChampionListItem, position string, index int) *ChampionDataIte
 	alias := champ.Alias
 	fmt.Printf("⌛️️ No.%d, %s @ %s\n", index, alias, position)
 
-	d, _ := genPositionData(alias, position)
+	id, _ := strconv.Atoi(champ.Id)
+	d, _ := genPositionData(alias, position, id)
 	if d != nil {
 		d.Index = index
 		d.Id = champ.Id
@@ -251,7 +332,7 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 	cnt := 0
 	ch := make(chan ChampionDataItem, count)
 
-//output:
+	//output:
 	for _, cur := range d.ChampionList {
 		for _, p := range cur.Positions {
 			cnt += 1
