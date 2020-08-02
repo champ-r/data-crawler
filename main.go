@@ -97,6 +97,17 @@ type ChampionListResp struct {
 
 const DataDragonUrl = "https://ddragon.leagueoflegends.com"
 
+func getSpellName(src string) string {
+	if len(src) == 0 {
+		return ""
+	}
+
+	r := regexp.MustCompile("Summoner(.*)\\.png")
+	result := r.FindStringSubmatch(src)
+	s := strings.ToLower(result[len(result)-1])
+	return s
+}
+
 func getChampionList() (*ChampionListResp, string) {
 	res, err := http.Get(DataDragonUrl + "/api/versions.json")
 	if err != nil {
@@ -202,13 +213,10 @@ func genPositionData(alias string, position string) (*ChampionDataItem, error) {
 		d.Skills = append(d.Skills, s)
 	})
 
-	r := regexp.MustCompile("Summoner(.*)\\.png")
 	doc.Find(`.champion-overview__table--summonerspell > tbody`).First().Find(`img`).Each(func(i int, selection *goquery.Selection) {
 		src, _ := selection.Attr("src")
-
-		if len(src) > 0 {
-			result := r.FindStringSubmatch(src)
-			s := result[len(result)-1]
+		s := getSpellName(src)
+		if len(s) > 0 {
 			d.Spells = append(d.Spells, s)
 		}
 	})
@@ -223,21 +231,14 @@ func worker(champ ChampionListItem, position string, index int) *ChampionDataIte
 	fmt.Printf("⌛️️ No.%d, %s @ %s\n", index, alias, position)
 
 	d, _ := genPositionData(alias, position)
-	result := ChampionDataItem{
-		Alias:    alias,
-		Position: position,
-		Index:    index,
-		Id:       champ.Id,
-		Name:     champ.Name,
-		Spells:   d.Spells,
-	}
-
 	if d != nil {
-		result.Skills = d.Skills
+		d.Index = index
+		d.Id = champ.Id
+		d.Name = champ.Name
 	}
 
 	fmt.Printf("🌟 No.%d, %s @ %s\n", index, alias, position)
-	return &result
+	return d
 }
 
 func importTask(allChampions map[string]ChampionItem, aliasList map[string]string) {
