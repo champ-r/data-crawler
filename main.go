@@ -83,14 +83,14 @@ type ChampionItem struct {
 		Difficulty int `json:"difficulty"`
 	} `json:"info"`
 	Image struct {
-		Full   string `json:full`
-		Sprite string `json:sprite`
-		Group  string `json:group`
-		X      int    `json:x`
-		Y      int    `json:y`
-		W      int    `json:w`
-		H      int    `json:h`
-	} `json:image`
+		Full   string `json:"full"`
+		Sprite string `json:"sprite"`
+		Group  string `json:"group"`
+		X      int    `json:"x"`
+		Y      int    `json:"y"`
+		W      int    `json:"w"`
+		H      int    `json:"h"`
+	} `json:"image"`
 	Tags    []string `json:"tags"`
 	Partype string   `json:"partype"`
 	Stats   struct {
