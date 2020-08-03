@@ -60,6 +60,7 @@ type ChampionDataItem struct {
 	Index      int         `json:"index"`
 	Id         string      `json:"id"`
 	Version    string      `json:"version"`
+	Timestamp  int64       `json:"timestamp"`
 	Alias      string      `json:"alias"`
 	Name       string      `json:"name"`
 	Position   string      `json:"position"`
@@ -363,8 +364,10 @@ func worker(champ ChampionListItem, position string, index int) *ChampionDataIte
 }
 
 func importTask(allChampions map[string]ChampionItem, aliasList map[string]string) {
+	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
 	start := time.Now()
 	fmt.Println("🤖 Start...")
+
 	d, count := genOverview(allChampions, aliasList)
 	fmt.Printf("🤪 Got champions & positions, count: %d \n", count)
 
@@ -404,6 +407,7 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 
 	for champion := range ch {
 		if champion.Skills != nil {
+			champion.Timestamp = timestamp
 			champion.Version = d.Version
 			r[champion.Alias] = append(r[champion.Alias], champion)
 		}
