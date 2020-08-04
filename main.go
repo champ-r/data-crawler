@@ -2,15 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -30,186 +26,8 @@ type OverviewData struct {
 	Unavailable  []string           `json:"unavailable"`
 }
 
-type BlockItem struct {
-	Id    string `json:"id"`
-	Count int    `json:"count"`
-}
-
-type ItemBuildBlockItem struct {
-	Type  string      `json:"type"`
-	Items []BlockItem `json:"items"`
-}
-
-type ItemBuild struct {
-	Title               string               `json:"title"`
-	AssociatedMaps      []int                `json:"associatedMaps"`
-	AssociatedChampions []int                `json:"associatedChampions"`
-	Blocks              []ItemBuildBlockItem `json:"blocks"`
-}
-
-type RuneItem struct {
-	Name            string `json:"name"`
-	PickCount       string `json:"pickCount"`
-	WinRate         string `json:"winRate"`
-	PrimaryStyleId  int    `json:"primaryStyleId"`
-	SubStyleId      int    `json:"subStyleId"`
-	SelectedPerkIds []int  `json:"selectedPerkIds"`
-}
-
-type ChampionDataItem struct {
-	Index      int         `json:"index"`
-	Id         string      `json:"id"`
-	Version    string      `json:"version"`
-	Timestamp  int64       `json:"timestamp"`
-	Alias      string      `json:"alias"`
-	Name       string      `json:"name"`
-	Position   string      `json:"position"`
-	Skills     []string    `json:"skills"`
-	Spells     []string    `json:"spells"`
-	ItemBuilds []ItemBuild `json:"itemBuilds"`
-	Runes      []RuneItem  `json:"runes"`
-}
-
-type ChampionItem struct {
-	Version string `json:"version"`
-	Id      string `json:"id"`
-	Key     string `json:"key"`
-	Name    string `json:"name"`
-	Title   string `json:"title"`
-	Blurb   string `json:"blurb"`
-	Info    struct {
-		Attack     int `json:"attack"`
-		Defense    int `json:"defense"`
-		Magic      int `json:"magic"`
-		Difficulty int `json:"difficulty"`
-	} `json:"info"`
-	Image struct {
-		Full   string `json:"full"`
-		Sprite string `json:"sprite"`
-		Group  string `json:"group"`
-		X      int    `json:"x"`
-		Y      int    `json:"y"`
-		W      int    `json:"w"`
-		H      int    `json:"h"`
-	} `json:"image"`
-	Tags    []string `json:"tags"`
-	Partype string   `json:"partype"`
-	Stats   struct {
-		Hp                   int     `json:"hp"`
-		Hpperlevel           int     `json:"hpperlevel"`
-		Mp                   int     `json:"mp"`
-		Mpperlevel           int     `json:"mpperlevel"`
-		Movespeed            int     `json:"movespeed"`
-		Armor                int     `json:"armor"`
-		Armorperlevel        int     `json:"armorperlevel"`
-		Spellblock           int     `json:"spellblock"`
-		Spellblockperlevel   int     `json:"spellblockperlevel"`
-		Attackrange          int     `json:"attackrange"`
-		Hpregen              int     `json:"hpregen"`
-		Hpregenperlevel      int     `json:"hpregenperlevel"`
-		Mpregen              int     `json:"mpregen"`
-		Mpregenperlevel      int     `json:"mpregenperlevel"`
-		Crit                 int     `json:"crit"`
-		Critperlevel         int     `json:"critperlevel"`
-		Attackdamage         int     `json:"attackdamage"`
-		Attackdamageperlevel int     `json:"attackdamageperlevel"`
-		Attackspeedperlevel  float32 `json:"attackspeedperlevel"`
-		Attackspeed          float32 `json:"attackspeed"`
-	} `json:"stats"`
-}
-
-type ChampionListResp struct {
-	Type    string                  `json:"type"`
-	Format  string                  `json:"format"`
-	Version string                  `json:"version"`
-	Data    map[string]ChampionItem `json:"data"`
-}
-
-const DataDragonUrl = "https://ddragon.leagueoflegends.com"
-
-func MatchSpellName(src string) string {
-	if len(src) == 0 {
-		return ""
-	}
-
-	r := regexp.MustCompile("Summoner(.*)\\.png")
-	result := r.FindStringSubmatch(src)
-	s := strings.ToLower(result[len(result)-1])
-	return s
-}
-
-func MatchId(src string) string {
-	if len(src) == 0 {
-		return ""
-	}
-
-	r := regexp.MustCompile("\\/(\\d+)\\.png")
-	result := r.FindStringSubmatch(src)
-	s := strings.ToLower(result[len(result)-1])
-	return s
-}
-
-func NoRepeatPush(el string, arr []string) []string {
-	index := -1
-	for idx, v := range arr {
-		if v == el {
-			index = idx
-			break
-		}
-	}
-
-	if index <= 0 {
-		return append(arr, el)
-	}
-	return arr
-}
-
-func getChampionList() (*ChampionListResp, string) {
-	res, err := http.Get(DataDragonUrl + "/api/versions.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		log.Fatal("Request lol version failed.")
-	}
-
-	body, _ := ioutil.ReadAll(res.Body)
-	var versionArr []string
-	_ = json.Unmarshal(body, &versionArr)
-	version := versionArr[0]
-
-	res, err = http.Get(DataDragonUrl + "/cdn/" + version + "/data/en_US/champion.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		log.Fatal("Request lol version failed.")
-	}
-
-	body, _ = ioutil.ReadAll(res.Body)
-	var resp ChampionListResp
-	_ = json.Unmarshal(body, &resp)
-
-	fmt.Printf("🤖 Got official champion list, total %d \n", len(resp.Data))
-	return &resp, version
-}
-
 func genOverview(allChampions map[string]ChampionItem, aliasList map[string]string) (*OverviewData, int) {
-	res, err := http.Get("https://www.op.gg/champion/statistics")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		log.Fatalf("[OP.GG]: request overview error: %d %s", res.StatusCode, res.Status)
-	}
-
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+	doc, err := ParseHTML(`https://www.op.gg/champion/statistics`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -244,17 +62,7 @@ func genOverview(allChampions map[string]ChampionItem, aliasList map[string]stri
 
 func genPositionData(alias string, position string, id int) (*ChampionDataItem, error) {
 	url := "https://www.op.gg/champion/" + alias + "/statistics/" + position
-	res, err := http.Get(url)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return nil, errors.New(res.Status)
-	}
-
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+	doc, err := ParseHTML(url)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -414,25 +222,19 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 	}
 
 	for k, v := range r {
-		file, _ := json.MarshalIndent(v, "", "  ")
 		fileName := outputPath + "/" + k + ".json"
-		wErr := ioutil.WriteFile(fileName, file, 0644)
-
-		if wErr != nil {
-			log.Fatal(wErr)
-		}
+		SaveJSON(fileName, v)
 	}
 
 	file, _ := json.MarshalIndent(allChampions, "", "  ")
-	fileName := "output/index.json"
-	_ = ioutil.WriteFile(fileName, file, 0644)
+	SaveJSON("output/index.json", file)
 
 	duration := time.Since(start)
 	fmt.Printf("🟢 All finished, success: %d, failed: %d, took %s \n", count-failed, failed, duration)
 }
 
 func main() {
-	allChampionData, _ := getChampionList()
+	allChampionData, _, _ := GetChampionList()
 
 	var championAliasList = make(map[string]string)
 	for k, v := range allChampionData.Data {
