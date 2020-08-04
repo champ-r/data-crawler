@@ -234,7 +234,10 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 }
 
 func main() {
-	allChampionData, _, _ := GetChampionList()
+	allChampionData, _, err := GetChampionList()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	var championAliasList = make(map[string]string)
 	for k, v := range allChampionData.Data {
