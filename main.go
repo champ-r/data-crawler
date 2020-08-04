@@ -234,7 +234,7 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 	_ = ioutil.WriteFile("output/op.gg/package.json", []byte(pkg), 0644)
 
 	duration := time.Since(start)
-	fmt.Printf("🟢 All finished, success: %d, failed: %d, took %s \n", count-failed, failed, duration)
+	fmt.Printf("🟢 All finished, success: %d, failed: %d, took %s \n", cnt-failed, failed, duration)
 }
 
 func main() {
