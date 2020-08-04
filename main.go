@@ -1,9 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -22,7 +22,7 @@ type ChampionListItem struct {
 
 type OverviewData struct {
 	Version      string             `json:"version"`
-	ChampionList []ChampionListItem `json:"championlist"`
+	ChampionList []ChampionListItem `json:"championList"`
 	Unavailable  []string           `json:"unavailable"`
 }
 
@@ -86,7 +86,7 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 	})
 
 	build := ItemBuild{
-		Title:               "[OP.GG] " + alias + " " + position,
+		Title:               "[OP.GG] " + alias + "@" + position,
 		AssociatedMaps:      []int{11, 12},
 		AssociatedChampions: []int{id},
 	}
@@ -223,11 +223,15 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 
 	for k, v := range r {
 		fileName := outputPath + "/" + k + ".json"
-		SaveJSON(fileName, v)
+		_ = SaveJSON(fileName, v)
 	}
 
-	file, _ := json.MarshalIndent(allChampions, "", "  ")
-	SaveJSON("output/index.json", file)
+	_ = SaveJSON("output/index.json", allChampions)
+
+	pkg, _ := GenPkgInfo("tpl/package.tpl", PkgInfo{
+		Timestamp: timestamp,
+	})
+	_ = ioutil.WriteFile("output/op.gg/package.json", []byte(pkg), 0644)
 
 	duration := time.Since(start)
 	fmt.Printf("🟢 All finished, success: %d, failed: %d, took %s \n", count-failed, failed, duration)

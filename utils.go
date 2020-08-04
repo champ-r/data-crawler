@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -110,3 +112,17 @@ func ParseHTML(url string) (*goquery.Document, error) {
 	return goquery.NewDocumentFromReader(res.Body)
 }
 
+func GenPkgInfo(tplPath string, vars interface{}) (string, error) {
+	tpl, err := template.ParseFiles(tplPath)
+	if err != nil {
+		return "", err
+	}
+
+	var tplBytes bytes.Buffer
+	err = tpl.Execute(&tplBytes, vars)
+	if err != nil {
+		return "", err
+	}
+
+	return tplBytes.String(), nil
+}

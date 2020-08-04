@@ -94,3 +94,7 @@ type ChampionListResp struct {
 	Version string                  `json:"version"`
 	Data    map[string]ChampionItem `json:"data"`
 }
+
+type PkgInfo struct {
+	Timestamp int64 `json:"timestamp"`
+}
