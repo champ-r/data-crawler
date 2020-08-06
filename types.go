@@ -96,5 +96,6 @@ type ChampionListResp struct {
 }
 
 type PkgInfo struct {
-	Timestamp int64 `json:"timestamp"`
+	Timestamp     int64  `json:"timestamp"`
+	SourceVersion string `json:"sourceVersion"`
 }

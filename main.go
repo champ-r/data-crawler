@@ -229,7 +229,8 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 	_ = SaveJSON("output/index.json", allChampions)
 
 	pkg, _ := GenPkgInfo("tpl/package.tpl", PkgInfo{
-		Timestamp: timestamp,
+		Timestamp:     timestamp,
+		SourceVersion: d.Version,
 	})
 	_ = ioutil.WriteFile("output/op.gg/package.json", []byte(pkg), 0644)
 
