@@ -86,9 +86,15 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 	})
 
 	build := ItemBuild{
-		Title:               "[OP.GG] " + alias + "@" + position,
+		Title:               "[OP.GG] " + alias + " @ " + position,
 		AssociatedMaps:      []int{11, 12},
 		AssociatedChampions: []int{id},
+		Map:                 "any",
+		Mode:                "any",
+		PreferredItemSlots:  []string{},
+		Sortrank:            1,
+		StartedFrom:         "blank",
+		Type:                "custom",
 	}
 
 	// item builds

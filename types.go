@@ -15,6 +15,12 @@ type ItemBuild struct {
 	AssociatedMaps      []int                `json:"associatedMaps"`
 	AssociatedChampions []int                `json:"associatedChampions"`
 	Blocks              []ItemBuildBlockItem `json:"blocks"`
+	Map                 string               `json:"map"`
+	Mode                string               `json:"mode"`
+	PreferredItemSlots  []string             `json:"preferredItemSlots"`
+	Sortrank            int                  `json:"sortrank"`
+	StartedFrom         string               `json:"startedFrom"`
+	Type                string               `json:"type"`
 }
 
 type RuneItem struct {
