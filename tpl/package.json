@@ -1,6 +1,6 @@
 {
   "name": "@champ-r/op.gg",
-  "version": "1.2.0-{{ .Timestamp }}",
+  "version": "{{ .OfficialVersion }}-v{{ .Timestamp }}",
   "sourceVersion": "{{ .SourceVersion }}",
   "description": "LoL champion statistics from op.gg.",
   "main": "index.json",

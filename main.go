@@ -177,7 +177,7 @@ func worker(champ ChampionListItem, position string, index int) *ChampionDataIte
 	return d
 }
 
-func importTask(allChampions map[string]ChampionItem, aliasList map[string]string) {
+func importTask(allChampions map[string]ChampionItem, aliasList map[string]string, officialVer string) {
 	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
 	start := time.Now()
 	fmt.Println("🤖 Start...")
@@ -223,6 +223,7 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 		if champion.Skills != nil {
 			champion.Timestamp = timestamp
 			champion.Version = d.Version
+			champion.OfficialVersion = officialVer
 			r[champion.Alias] = append(r[champion.Alias], champion)
 		}
 	}
@@ -235,8 +236,9 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 	_ = SaveJSON("output/index.json", allChampions)
 
 	pkg, _ := GenPkgInfo("tpl/package.json", PkgInfo{
-		Timestamp:     timestamp,
-		SourceVersion: d.Version,
+		Timestamp:       timestamp,
+		SourceVersion:   d.Version,
+		OfficialVersion: officialVer,
 	})
 	_ = ioutil.WriteFile("output/op.gg/package.json", []byte(pkg), 0644)
 
@@ -245,7 +247,7 @@ func importTask(allChampions map[string]ChampionItem, aliasList map[string]strin
 }
 
 func main() {
-	allChampionData, _, err := GetChampionList()
+	allChampionData, officialVer, err := GetChampionList()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -255,5 +257,5 @@ func main() {
 		championAliasList[v.Name] = k
 	}
 
-	importTask(allChampionData.Data, championAliasList)
+	importTask(allChampionData.Data, championAliasList, officialVer)
 }

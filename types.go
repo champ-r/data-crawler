@@ -33,17 +33,18 @@ type RuneItem struct {
 }
 
 type ChampionDataItem struct {
-	Index      int         `json:"index"`
-	Id         string      `json:"id"`
-	Version    string      `json:"version"`
-	Timestamp  int64       `json:"timestamp"`
-	Alias      string      `json:"alias"`
-	Name       string      `json:"name"`
-	Position   string      `json:"position"`
-	Skills     []string    `json:"skills"`
-	Spells     []string    `json:"spells"`
-	ItemBuilds []ItemBuild `json:"itemBuilds"`
-	Runes      []RuneItem  `json:"runes"`
+	Index           int         `json:"index"`
+	Id              string      `json:"id"`
+	Version         string      `json:"version"`
+	OfficialVersion string      `json:"officialVersion"`
+	Timestamp       int64       `json:"timestamp"`
+	Alias           string      `json:"alias"`
+	Name            string      `json:"name"`
+	Position        string      `json:"position"`
+	Skills          []string    `json:"skills"`
+	Spells          []string    `json:"spells"`
+	ItemBuilds      []ItemBuild `json:"itemBuilds"`
+	Runes           []RuneItem  `json:"runes"`
 }
 
 type ChampionItem struct {
@@ -102,6 +103,7 @@ type ChampionListResp struct {
 }
 
 type PkgInfo struct {
-	Timestamp     int64  `json:"timestamp"`
-	SourceVersion string `json:"sourceVersion"`
+	Timestamp       int64  `json:"timestamp"`
+	SourceVersion   string `json:"sourceVersion"`
+	OfficialVersion string `json:"officialVersion"`
 }
