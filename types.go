@@ -18,7 +18,9 @@ type ItemBuild struct {
 }
 
 type RuneItem struct {
+	Alias           string `json:"alias"`
 	Name            string `json:"name"`
+	Position        string `json:"position"`
 	PickCount       string `json:"pickCount"`
 	WinRate         string `json:"winRate"`
 	PrimaryStyleId  int    `json:"primaryStyleId"`

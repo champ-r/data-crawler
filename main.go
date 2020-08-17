@@ -123,6 +123,8 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 	// runes
 	doc.Find(`[class*=ChampionKeystoneRune] tr`).Each(func(_ int, tr *goquery.Selection) {
 		var runeItem RuneItem
+		runeItem.Alias = alias
+		runeItem.Position = position
 
 		tr.Find(`.perk-page__item--active img`).Each(func(_ int, img *goquery.Selection) {
 			src, _ := img.Attr(`src`)
