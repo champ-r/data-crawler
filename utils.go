@@ -39,18 +39,13 @@ func MatchId(src string) string {
 }
 
 func NoRepeatPush(el string, arr []string) []string {
-	index := -1
-	for idx, v := range arr {
+	for _, v := range arr {
 		if v == el {
-			index = idx
-			break
+			return arr
 		}
 	}
 
-	if index <= 0 {
-		return append(arr, el)
-	}
-	return arr
+	return append(arr, el)
 }
 
 func GetChampionList() (*ChampionListResp, string, error) {
