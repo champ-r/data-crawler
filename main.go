@@ -98,7 +98,7 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 	}
 
 	// item builds
-	doc.Find(`.champion-overview__table:nth-child(2) .champion-overview__row--first`).Each(func(_ int, selection *goquery.Selection) {
+	doc.Find(`.champion-overview__table:nth-child(2) .champion-overview__row--first`).Each(func(blockIdx int, selection *goquery.Selection) {
 		var block ItemBuildBlockItem
 		block.Type = strings.TrimSpace(selection.Find(`th.champion-overview__sub-header`).Text())
 
@@ -114,6 +114,19 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 			itemIds = NoRepeatPush(id, itemIds)
 		})
 
+		// starter items
+		if blockIdx == 0 {
+			// wards
+			for _, id := range WardItems {
+				itemIds = NoRepeatPush(id, itemIds)
+			}
+
+			// trinkets
+			for _, id := range TrinketItems {
+				itemIds = NoRepeatPush(id, itemIds)
+			}
+		}
+
 		for _, val := range itemIds {
 			item := BlockItem{
 				Id:    val,
@@ -123,6 +136,19 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 		}
 		build.Blocks = append(build.Blocks, block)
 	})
+
+	// consumables
+	b := ItemBuildBlockItem{
+		Type: "Consumables",
+	}
+	for _, id := range ConsumableItems {
+		item := BlockItem{
+			Id:    id,
+			Count: 1,
+		}
+		b.Items = append(b.Items, item)
+	}
+	build.Blocks = append(build.Blocks, b)
 
 	d.ItemBuilds = append(d.ItemBuilds, build)
 
