@@ -26,8 +26,10 @@ type OverviewData struct {
 	Unavailable  []string           `json:"unavailable"`
 }
 
+const OPGG = `https://www.op.gg/champion`
+
 func genOverview(allChampions map[string]ChampionItem, aliasList map[string]string) (*OverviewData, int) {
-	doc, err := ParseHTML(`https://www.op.gg/champion/statistics`)
+	doc, err := ParseHTML(OPGG + `/statistics`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,7 +63,7 @@ func genOverview(allChampions map[string]ChampionItem, aliasList map[string]stri
 }
 
 func genPositionData(alias string, position string, id int) (*ChampionDataItem, error) {
-	url := "https://www.op.gg/champion/" + alias + "/statistics/" + position
+	url := OPGG + "/" + alias + "/statistics/" + position
 	doc, err := ParseHTML(url)
 	if err != nil {
 		log.Fatal(err)
