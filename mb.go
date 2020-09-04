@@ -13,17 +13,18 @@ type VersionResponse struct {
 	GameTypes       string `json:"gameTypes"`
 }
 
-const MurderBridgeBUrl = `https://d23wati96d2ixg.cloudfront.net/`
+const MurderBridgeBUrl = `https://d23wati96d2ixg.cloudfront.net`
 
 func getLatestVersion() (string, error) {
-	res, err := http.Get(MurderBridgeBUrl + `/save/general.json`)
+	url := MurderBridgeBUrl + `/save/general.json`
+	res, err := http.Get(url)
 	if err != nil {
 		return "", err
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		return "", errors.New(`murderbridge: get version failed`)
+		return "", errors.New(res.Status)
 	}
 
 	body, _ := ioutil.ReadAll(res.Body)
@@ -32,7 +33,7 @@ func getLatestVersion() (string, error) {
 	return verResp.UpToDateVersion, nil
 }
 
-func main() {
+func Import() {
 	ver, _ := getLatestVersion()
 	fmt.Println(ver)
 }
