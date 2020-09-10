@@ -8,7 +8,6 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"html/template"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -48,35 +47,38 @@ func NoRepeatPush(el string, arr []string) []string {
 	return append(arr, el)
 }
 
-func GetChampionList() (*ChampionListResp, string, error) {
-	res, err := http.Get(DataDragonUrl + "/api/versions.json")
+func MakeRequest(url string) ([]byte, error) {
+	res, err := http.Get(url)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		return nil, "", errors.New(`data dragon: request version failed`)
+		return nil, errors.New(res.Status)
 	}
 
 	body, _ := ioutil.ReadAll(res.Body)
+	return body, nil
+}
+
+func GetChampionList() (*ChampionListResp, string, error) {
+	body, err := MakeRequest(DataDragonUrl + "/api/versions.json")
+	if err != nil {
+		return nil, "", err
+	}
+
 	var versionArr []string
 	_ = json.Unmarshal(body, &versionArr)
 	version := versionArr[0]
 
-	cRes, cErr := http.Get(DataDragonUrl + "/cdn/" + version + "/data/en_US/champion.json")
+	cBody, cErr := MakeRequest(DataDragonUrl + "/cdn/" + version + "/data/en_US/champion.json")
 	if cErr != nil {
 		return nil, "", errors.New(`data dragon: request champion list failed`)
 	}
 
-	defer cRes.Body.Close()
-	if cRes.StatusCode != 200 {
-		log.Fatal("Request lol version failed.")
-	}
-
-	body, _ = ioutil.ReadAll(cRes.Body)
 	var resp ChampionListResp
-	_ = json.Unmarshal(body, &resp)
+	_ = json.Unmarshal(cBody, &resp)
 
 	fmt.Printf("🤖 Got official champion list, total %d \n", len(resp.Data))
 	return &resp, version, nil
@@ -94,17 +96,14 @@ func SaveJSON(fileName string, data interface{}) error {
 }
 
 func ParseHTML(url string) (*goquery.Document, error) {
-	res, err := http.Get(url)
+	body, err := MakeRequest(url)
 	if err != nil {
 		return nil, err
 	}
 
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return nil, errors.New(res.Status)
-	}
-
-	return goquery.NewDocumentFromReader(res.Body)
+	buf := bytes.NewBuffer(body)
+	reader := ioutil.NopCloser(buf)
+	return goquery.NewDocumentFromReader(reader)
 }
 
 func GenPkgInfo(tplPath string, vars interface{}) (string, error) {
