@@ -63,7 +63,14 @@ func genOverview(allChampions map[string]ChampionItem, aliasList map[string]stri
 }
 
 func genPositionData(alias string, position string, id int) (*ChampionDataItem, error) {
-	url := OPGG + "/" + alias + "/statistics/" + position
+	pos := position
+	if position == `middle` {
+		pos = `mid`
+	} else if position == `bottom` {
+		pos = `bot`
+	}
+	url := OPGG + "/" + alias + "/statistics/" + pos
+
 	doc, err := ParseHTML(url)
 	if err != nil {
 		log.Fatal(err)
