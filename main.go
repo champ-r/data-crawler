@@ -214,7 +214,7 @@ func worker(champ ChampionListItem, position string, index int) *ChampionDataIte
 	return d
 }
 
-func importTask(allChampions map[string]ChampionItem, aliasList map[string]string, officialVer string) {
+func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]string, officialVer string) {
 	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
 	start := time.Now()
 	fmt.Println("🤖 Start...")
@@ -293,6 +293,6 @@ func main() {
 	for k, v := range allChampionData.Data {
 		championAliasList[v.Name] = k
 	}
-
-	importTask(allChampionData.Data, championAliasList, officialVer)
+	
+	ImportOPGG(allChampionData.Data, championAliasList, officialVer)
 }

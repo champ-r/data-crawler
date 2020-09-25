@@ -24,7 +24,7 @@ func getLatestVersion() (string, error) {
 	return verResp.UpToDateVersion, nil
 }
 
-func Import() {
+func ImportMB() {
 	ver, _ := getLatestVersion()
 	fmt.Println(ver)
 }
