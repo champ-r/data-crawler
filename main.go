@@ -293,6 +293,9 @@ func main() {
 	for k, v := range allChampionData.Data {
 		championAliasList[v.Name] = k
 	}
-	
+
+	//ImportMB(championAliasList)
+	//return
+
 	ImportOPGG(allChampionData.Data, championAliasList, officialVer)
 }
