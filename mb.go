@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type VersionResp struct {
@@ -152,6 +153,10 @@ func ImportMB(championAliasList map[string]string) {
 		//if cnt > 3 {
 		//	break
 		//}
+
+		if cnt%7 == 0 {
+			time.Sleep(time.Second * 5)
+		}
 
 		cnt += 1
 		wg.Add(1)
