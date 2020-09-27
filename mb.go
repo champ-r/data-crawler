@@ -54,6 +54,8 @@ const generalMean = 2.5
 const generalRatio = 50
 const spread = 100 - generalRatio
 
+var items *map[string]BuildItem
+
 func getLatestVersion() (string, error) {
 	url := MurderBridgeBUrl + `/save/general.json`
 	body, err := MakeRequest(url)
@@ -102,6 +104,7 @@ func getItem(data map[string]ChampionDataRespDataItem, limit int) []ScoreItem {
 func makeItems(data ChampionDataResp) ([]ScoreItem, []ScoreItem) {
 	starting := getItem(data.Items.Starting, 3)
 	builds := getItem(data.Items.Build, 13)
+	var bootIds []string
 
 	for i, v := range starting {
 		var itemSet [][2]int
@@ -111,6 +114,11 @@ func makeItems(data ChampionDataResp) ([]ScoreItem, []ScoreItem) {
 		}
 	}
 	for i, v := range builds {
+		if IsBoot(v.RawItem, *items) {
+			bootIds = append(bootIds, v.RawItem)
+			continue
+		}
+
 		builds[i].Items = append(builds[i].Items, v.RawItem)
 	}
 
@@ -128,27 +136,32 @@ func getChampionData(alias string, version string) (*ChampionDataResp, error) {
 	_ = json.Unmarshal(body, &data)
 
 	makeItems(data)
+	fmt.Println(alias)
 
 	return &data, nil
 }
 
 func ImportMB(championAliasList map[string]string) {
 	ver, _ := getLatestVersion()
-	fmt.Println(ver)
+	items, _ = GetItemList(ver)
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
 	ch := make(chan ChampionDataResp, len(championAliasList))
 	for _, alias := range championAliasList {
-		if cnt > 3 {
-			break
-		}
+		//if cnt > 3 {
+		//	break
+		//}
 
 		cnt += 1
 		wg.Add(1)
 		go func(_alias string, _ver string, _cnt int) {
-			d, _ := getChampionData(_alias, _ver)
-			ch <- *d
+			d, err := getChampionData(_alias, _ver)
+			if d != nil {
+				ch <- *d
+			} else {
+				fmt.Println(_alias, err)
+			}
 			wg.Done()
 		}(alias, ver, cnt)
 	}

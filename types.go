@@ -109,3 +109,24 @@ type PkgInfo struct {
 	SourceVersion   string `json:"sourceVersion"`
 	OfficialVersion string `json:"officialVersion"`
 }
+
+type BuildItem struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Colloq      string          `json:"colloq"`
+	Plaintext   string          `json:"plaintext"`
+	From        []string        `json:"from"`
+	Into        []string        `json:"into"`
+	Image       string          `json:"image"`
+	Gold        string          `json:"gold"`
+	Tags        []string        `json:"tags"`
+	Maps        map[string]bool `json:"maps"`
+	Stats       string          `json:"stats"`
+}
+
+type BuildItemResp struct {
+	Type    string               `json:"type"`
+	Version string               `json:"version"`
+	Basic   string               `json:"basic"`
+	Data    map[string]BuildItem `json:"data"`
+}

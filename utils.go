@@ -14,6 +14,7 @@ import (
 )
 
 const DataDragonUrl = "https://ddragon.leagueoflegends.com"
+const BaseBootId = `1001`
 
 func MatchSpellName(src string) string {
 	if len(src) == 0 {
@@ -45,6 +46,18 @@ func NoRepeatPush(el string, arr []string) []string {
 	}
 
 	return append(arr, el)
+}
+
+func Includes(target string, list []string) bool {
+	existed := false
+	for _, i := range list {
+		if i == target {
+			existed = true
+			break
+		}
+	}
+
+	return existed
 }
 
 func MakeRequest(url string) ([]byte, error) {
@@ -119,4 +132,20 @@ func GenPkgInfo(tplPath string, vars interface{}) (string, error) {
 	}
 
 	return tplBytes.String(), nil
+}
+
+func GetItemList(version string) (*map[string]BuildItem, error) {
+	body, err := MakeRequest(DataDragonUrl + `/cdn/` + version + `/data/en_US/item.json`)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp BuildItemResp
+	_ = json.Unmarshal(body, &resp)
+	return &resp.Data, nil
+}
+
+func IsBoot(id string, items map[string]BuildItem) bool {
+	result := Includes(BaseBootId, items[id].From)
+	return result
 }
