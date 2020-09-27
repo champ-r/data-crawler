@@ -294,7 +294,7 @@ func main() {
 		championAliasList[v.Name] = k
 	}
 
-	//ImportMB(championAliasList)
+	//ImportMB(allChampionData.Data)
 	//return
 
 	ImportOPGG(allChampionData.Data, championAliasList, officialVer)

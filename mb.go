@@ -44,9 +44,8 @@ type ChampionDataResp struct {
 }
 
 type ScoreItem struct {
-	RawItem string   `json:"RawItem"`
-	Items   []string `json:"items"`
-	Score   float64  `json:"score"`
+	RawItem string  `json:"RawItem"`
+	Score   float64 `json:"score"`
 }
 
 const MurderBridgeBUrl = `https://d23wati96d2ixg.cloudfront.net`
@@ -102,32 +101,44 @@ func getItem(data map[string]ChampionDataRespDataItem, limit int) []ScoreItem {
 	return keyScoreMap[0:limit]
 }
 
-func makeItems(data ChampionDataResp) ([]ScoreItem, []ScoreItem) {
+func makeBlocks(data ChampionDataResp) []ItemBuildBlockItem {
 	starting := getItem(data.Items.Starting, 3)
 	builds := getItem(data.Items.Build, 13)
+
+	var startingItems []string
+	var buildItems []string
 	var bootIds []string
 
-	for i, v := range starting {
+	for _, v := range starting {
 		var itemSet [][2]int
 		_ = json.Unmarshal([]byte(v.RawItem), &itemSet)
 		for _, j := range itemSet {
-			starting[i].Items = append(starting[i].Items, strconv.Itoa(j[0]))
+			startingItems = append(startingItems, strconv.Itoa(j[0]))
 		}
 	}
-	for i, v := range builds {
+	for _, v := range builds {
 		if IsBoot(v.RawItem, *items) {
 			bootIds = append(bootIds, v.RawItem)
 			continue
 		}
 
-		builds[i].Items = append(builds[i].Items, v.RawItem)
+		buildItems = append(buildItems, v.RawItem)
 	}
 
-	return starting, builds
+	startingBlocks := MakeBuildBlock(startingItems, `Starting`)
+	buildBlocks := MakeBuildBlock(buildItems, `Recommended Builds`)
+	bootBlocks := MakeBuildBlock(bootIds, `Boots`)
+
+	items := []ItemBuildBlockItem{
+		startingBlocks,
+		buildBlocks,
+		bootBlocks,
+	}
+	return items
 }
 
-func getChampionData(alias string, version string) (*ChampionDataResp, error) {
-	url := MurderBridgeBUrl + `/save/` + version + `/ARAM/` + alias + `.json`
+func getChampionData(champion ChampionItem, version string) (*ChampionDataResp, error) {
+	url := MurderBridgeBUrl + `/save/` + version + `/ARAM/` + champion.Id + `.json`
 	body, err := MakeRequest(url)
 	if err != nil {
 		return nil, err
@@ -135,40 +146,48 @@ func getChampionData(alias string, version string) (*ChampionDataResp, error) {
 
 	var data ChampionDataResp
 	_ = json.Unmarshal(body, &data)
+	key, _ := strconv.Atoi(champion.Key)
 
-	makeItems(data)
-	fmt.Println(alias)
+	itemBuild := ItemBuild{
+		Title:               `[MB] ` + champion.Id,
+		AssociatedMaps:      []int{12},
+		AssociatedChampions: []int{key},
+		Map:                 "any",
+		Mode:                "any",
+		PreferredItemSlots:  []string{},
+		Sortrank:            1,
+		StartedFrom:         "blank",
+		Type:                "custom",
+		Blocks:              makeBlocks(data),
+	}
+	fmt.Println(champion.Id, itemBuild)
 
 	return &data, nil
 }
 
-func ImportMB(championAliasList map[string]string) {
+func ImportMB(championAliasList map[string]ChampionItem) {
 	ver, _ := getLatestVersion()
 	items, _ = GetItemList(ver)
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
 	ch := make(chan ChampionDataResp, len(championAliasList))
-	for _, alias := range championAliasList {
-		//if cnt > 3 {
-		//	break
-		//}
-
+	for _, champion := range championAliasList {
 		if cnt%7 == 0 {
 			time.Sleep(time.Second * 5)
 		}
 
 		cnt += 1
 		wg.Add(1)
-		go func(_alias string, _ver string, _cnt int) {
-			d, err := getChampionData(_alias, _ver)
+		go func(_champion ChampionItem, _ver string, _cnt int) {
+			d, err := getChampionData(_champion, _ver)
 			if d != nil {
 				ch <- *d
 			} else {
-				fmt.Println(_alias, err)
+				fmt.Println(_champion.Id, err)
 			}
 			wg.Done()
-		}(alias, ver, cnt)
+		}(champion, ver, cnt)
 	}
 	wg.Wait()
 

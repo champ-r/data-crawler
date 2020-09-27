@@ -149,3 +149,18 @@ func IsBoot(id string, items map[string]BuildItem) bool {
 	result := Includes(BaseBootId, items[id].From)
 	return result
 }
+
+func MakeBuildBlock(arr []string, name string) ItemBuildBlockItem {
+	block := ItemBuildBlockItem{
+		Type: name,
+	}
+
+	for _, id := range arr {
+		block.Items = append(block.Items, BlockItem{
+			Id:    id,
+			Count: 1,
+		})
+	}
+
+	return block
+}
