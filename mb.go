@@ -15,31 +15,31 @@ type VersionResp struct {
 	GameTypes       string `json:"gameTypes"`
 }
 
-type ChampionDataRespDataItem struct {
+type StatItem struct {
 	WinRate   float64 `json:"winRate"`
 	Ratio     []int   `json:"ratio"`
 	Frequency float64 `json:"frequency"`
 }
 
 type ChampionDataResp struct {
-	WinRate     float64                             `json:"winRate"`
-	Rank        int                                 `json:"rank"`
-	BanRate     float64                             `json:"banRate"`
-	Stats       map[string]float64                  `json:"stats"`
-	NumGames    int                                 `json:"numGames"`
-	Runes       map[string]ChampionDataRespDataItem `json:"runes"`
-	Skills      map[string]ChampionDataRespDataItem `json:"skills"`
-	Summoners   map[string]ChampionDataRespDataItem `json:"summoners"`
-	Duration    map[string]ChampionDataRespDataItem `json:"duration"`
-	NumBans     int                                 `json:"numBans"`
-	Adjustments string                              `json:"adjustments"`
-	Frequency   float64                             `json:"frequency"`
-	NumWins     int                                 `json:"numWins"`
+	WinRate     float64             `json:"winRate"`
+	Rank        int                 `json:"rank"`
+	BanRate     float64             `json:"banRate"`
+	Stats       map[string]float64  `json:"stats"`
+	NumGames    int                 `json:"numGames"`
+	Runes       map[string]StatItem `json:"runes"`
+	Skills      map[string]StatItem `json:"skills"`
+	Summoners   map[string]StatItem `json:"summoners"`
+	Duration    map[string]StatItem `json:"duration"`
+	NumBans     int                 `json:"numBans"`
+	Adjustments string              `json:"adjustments"`
+	Frequency   float64             `json:"frequency"`
+	NumWins     int                 `json:"numWins"`
 	Items       struct {
-		Counter  map[string]ChampionDataRespDataItem   `json:"counter"`
-		Order    []map[string]ChampionDataRespDataItem `json:"order"`
-		Build    map[string]ChampionDataRespDataItem   `json:"build"`
-		Starting map[string]ChampionDataRespDataItem   `json:"starting"`
+		Counter  map[string]StatItem   `json:"counter"`
+		Order    []map[string]StatItem `json:"order"`
+		Build    map[string]StatItem   `json:"build"`
+		Starting map[string]StatItem   `json:"starting"`
 	} `json:"items"`
 }
 
@@ -84,7 +84,7 @@ func scorer(winRate float64, frequency float64) float64 {
 	return winRate * score
 }
 
-func getItem(data map[string]ChampionDataRespDataItem, limit int) []ScoreItem {
+func getItemList(data map[string]StatItem, limit int) []ScoreItem {
 	var keyScoreMap []ScoreItem
 	for k, v := range data {
 		item := ScoreItem{
@@ -102,8 +102,8 @@ func getItem(data map[string]ChampionDataRespDataItem, limit int) []ScoreItem {
 }
 
 func makeBlocks(data ChampionDataResp) []ItemBuildBlockItem {
-	starting := getItem(data.Items.Starting, 3)
-	builds := getItem(data.Items.Build, 13)
+	starting := getItemList(data.Items.Starting, 3)
+	builds := getItemList(data.Items.Build, 13)
 
 	var startingItems []string
 	var buildItems []string
@@ -113,26 +113,37 @@ func makeBlocks(data ChampionDataResp) []ItemBuildBlockItem {
 		var itemSet [][2]int
 		_ = json.Unmarshal([]byte(v.RawItem), &itemSet)
 		for _, j := range itemSet {
-			startingItems = append(startingItems, strconv.Itoa(j[0]))
+			startingItems = NoRepeatPush(strconv.Itoa(j[0]), startingItems)
 		}
 	}
+	// wards
+	for _, id := range WardItems {
+		startingItems = NoRepeatPush(id, startingItems)
+	}
+	// trinkets
+	for _, id := range TrinketItems {
+		startingItems = NoRepeatPush(id, startingItems)
+	}
+
 	for _, v := range builds {
 		if IsBoot(v.RawItem, *items) {
 			bootIds = append(bootIds, v.RawItem)
 			continue
 		}
 
-		buildItems = append(buildItems, v.RawItem)
+		buildItems = NoRepeatPush(v.RawItem, buildItems)
 	}
 
-	startingBlocks := MakeBuildBlock(startingItems, `Starting`)
+	startingBlocks := MakeBuildBlock(startingItems, `Starter Items`)
 	buildBlocks := MakeBuildBlock(buildItems, `Recommended Builds`)
 	bootBlocks := MakeBuildBlock(bootIds, `Boots`)
+	consumableItems := MakeBuildBlock(ConsumableItems, `Consumable Items`)
 
 	items := []ItemBuildBlockItem{
 		startingBlocks,
 		buildBlocks,
 		bootBlocks,
+		consumableItems,
 	}
 	return items
 }
