@@ -179,6 +179,8 @@ func getChampionData(champion ChampionItem, version string) (*ChampionDataResp, 
 func ImportMB(championAliasList map[string]ChampionItem) {
 	ver, _ := getLatestVersion()
 	items, _ = GetItemList(ver)
+	runeLoopUp, _ := GetRunesReforged(ver)
+	fmt.Println(len(runeLoopUp))
 
 	wg := new(sync.WaitGroup)
 	cnt := 0

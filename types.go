@@ -130,3 +130,25 @@ type BuildItemResp struct {
 	Basic   string               `json:"basic"`
 	Data    map[string]BuildItem `json:"data"`
 }
+
+type RespRuneItem struct {
+	Id        int    `json:"id"`
+	Key       string `json:"key"`
+	Icon      string `json:"icon"`
+	Name      string `json:"name"`
+	ShortDesc string `json:"shortDesc"`
+	LongDesc  string `json:"longDesc"`
+	Primary   bool   `json:"primary"`
+	Style     int    `json:"style"`
+	Slot      int    `json:"slot"`
+}
+
+type RuneSlot struct {
+	Id    int    `json:"id"`
+	Key   string `json:"key"`
+	Icon  string `json:"icon"`
+	Name  string `json:"name"`
+	Slots []struct {
+		Runes []RespRuneItem `json:"runes"`
+	} `json:"slots"`
+}
