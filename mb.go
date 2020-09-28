@@ -55,6 +55,7 @@ const generalRatio = 50
 const spread = 100 - generalRatio
 
 var items *map[string]BuildItem
+var runeLoopUp map[int]*RespRuneItem
 
 func getLatestVersion() (string, error) {
 	url := MurderBridgeBUrl + `/save/general.json`
@@ -179,8 +180,7 @@ func getChampionData(champion ChampionItem, version string) (*ChampionDataResp, 
 func ImportMB(championAliasList map[string]ChampionItem) {
 	ver, _ := getLatestVersion()
 	items, _ = GetItemList(ver)
-	runeLoopUp, _ := GetRunesReforged(ver)
-	fmt.Println(len(runeLoopUp))
+	runeLoopUp, _ = GetRunesReforged(ver)
 
 	wg := new(sync.WaitGroup)
 	cnt := 0

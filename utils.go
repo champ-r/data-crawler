@@ -174,25 +174,20 @@ func GetRunesReforged(version string) (map[int]*RespRuneItem, error) {
 	var resp []RuneSlot
 	_ = json.Unmarshal(body, &resp)
 
+	//data := make(map[int]RespRuneItem)
+
 	data := make(map[int]*RespRuneItem)
 	for _, slot := range resp {
 		for j, s := range slot.Slots {
 			for _, r := range s.Runes {
-				data[r.Id] = &RespRuneItem{
-					Id: r.Id,
-					Key: r.Key,
-					Icon: r.Icon,
-					Name: r.Name,
-					ShortDesc: r.ShortDesc,
-					LongDesc: r.LongDesc,
-					Style: slot.Id,
-					Slot: j,
-				}
+				r.Style = slot.Id
+				r.Slot = j
 				if j == 0 {
-					data[r.Id].Primary = true
+					r.Primary = true
 				} else {
-					data[r.Id].Primary = false
+					r.Primary = false
 				}
+				data[r.Id] = &r
 			}
 		}
 	}
