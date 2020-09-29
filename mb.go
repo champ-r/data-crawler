@@ -56,6 +56,7 @@ const spread = 100 - generalRatio
 
 var items *map[string]BuildItem
 var runeLoopUp map[int]*RespRuneItem
+var allRunes *[]RuneSlot
 
 func getLatestVersion() (string, error) {
 	url := MurderBridgeBUrl + `/save/general.json`
@@ -149,6 +150,9 @@ func makeBlocks(data ChampionDataResp) []ItemBuildBlockItem {
 	return items
 }
 
+func generateOptimalPerks(runes map[string]StatItem) {
+}
+
 func getChampionData(champion ChampionItem, version string) (*ChampionDataResp, error) {
 	url := MurderBridgeBUrl + `/save/` + version + `/ARAM/` + champion.Id + `.json`
 	body, err := MakeRequest(url)
@@ -180,7 +184,7 @@ func getChampionData(champion ChampionItem, version string) (*ChampionDataResp, 
 func ImportMB(championAliasList map[string]ChampionItem) {
 	ver, _ := getLatestVersion()
 	items, _ = GetItemList(ver)
-	runeLoopUp, _ = GetRunesReforged(ver)
+	runeLoopUp, allRunes, _ = GetRunesReforged(ver)
 
 	wg := new(sync.WaitGroup)
 	cnt := 0

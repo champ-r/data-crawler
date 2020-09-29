@@ -165,10 +165,10 @@ func MakeBuildBlock(arr []string, name string) ItemBuildBlockItem {
 	return block
 }
 
-func GetRunesReforged(version string) (map[int]*RespRuneItem, error) {
+func GetRunesReforged(version string) (map[int]*RespRuneItem, *[]RuneSlot, error) {
 	body, err := MakeRequest(DataDragonUrl + `/cdn/` + version + `/data/en_US/runesReforged.json`)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var resp []RuneSlot
@@ -191,5 +191,5 @@ func GetRunesReforged(version string) (map[int]*RespRuneItem, error) {
 			}
 		}
 	}
-	return data, nil
+	return data, &resp, nil
 }
