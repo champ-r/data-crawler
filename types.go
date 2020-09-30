@@ -132,15 +132,15 @@ type BuildItemResp struct {
 }
 
 type RespRuneItem struct {
-	Id        int    `json:"id"`
-	Key       string `json:"key"`
-	Icon      string `json:"icon"`
-	Name      string `json:"name"`
-	ShortDesc string `json:"shortDesc"`
-	LongDesc  string `json:"longDesc"`
-	Primary   bool   `json:"primary"`
-	Style     int    `json:"style"`
-	Slot      int    `json:"slot"`
+	Id        int     `json:"id"`
+	Key       string  `json:"key"`
+	Icon      string  `json:"icon"`
+	Name      string  `json:"name"`
+	ShortDesc string  `json:"shortDesc"`
+	LongDesc  string  `json:"longDesc"`
+	Primary   bool    `json:"primary"`
+	Style     int     `json:"style"`
+	Slot      int     `json:"slot"`
 }
 
 type RuneSlot struct {

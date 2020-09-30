@@ -48,6 +48,19 @@ type ScoreItem struct {
 	Score   float64 `json:"score"`
 }
 
+type PerkStyleItem struct {
+	Style     int     `json:"style"`
+	MainScore float64 `json:"mainScore"`
+	Runes     []int   `json:"runes"`
+}
+
+type SubPerkItem struct {
+	Rune0 RespRuneItem `json:"perk0"`
+	Rune1 RespRuneItem `json:"perk1"`
+	Score float64      `json:"score"`
+	Style int          `json:"style"`
+}
+
 const MurderBridgeBUrl = `https://d23wati96d2ixg.cloudfront.net`
 const e = 2.71828
 const generalMean = 2.5
@@ -150,7 +163,94 @@ func makeBlocks(data ChampionDataResp) []ItemBuildBlockItem {
 	return items
 }
 
+func generateOptimalSubPerks(runes map[string]StatItem) []SubPerkItem {
+	var optimalSubPerks []SubPerkItem
+
+	for _, i := range *allRunes {
+		var targetRunes []*RespRuneItem
+		for _, r := range runeLoopUp {
+			if r.Style == i.Id && r.Slot != 0 {
+				targetRunes = append(targetRunes, r)
+			}
+		}
+
+		var bestScore float64
+		var bestRunes SubPerkItem
+
+		for _, r1 := range targetRunes {
+			for _, r2 := range targetRunes {
+				if r1.Slot != r2.Slot {
+					score := scorer(runes[strconv.Itoa(r1.Id)].WinRate, runes[strconv.Itoa(r1.Id)].Frequency) + scorer(runes[strconv.Itoa(r2.Id)].WinRate, runes[strconv.Itoa(r2.Id)].Frequency)
+
+					if score > bestScore {
+						bestScore = score
+						bestRunes = SubPerkItem{
+							Rune0: *r1,
+							Rune1: *r2,
+							Score: score,
+							Style: i.Id,
+						}
+					}
+				}
+			}
+		}
+
+		optimalSubPerks = append(optimalSubPerks, bestRunes)
+	}
+
+	sort.Slice(optimalSubPerks, func(i, j int) bool {
+		return optimalSubPerks[i].Score > optimalSubPerks[j].Score
+	})
+
+	return optimalSubPerks
+}
+
 func generateOptimalPerks(runes map[string]StatItem) {
+	var bestScore float64
+	var perkStyles []PerkStyleItem
+	scoreMap := make(map[int]float64)
+
+	for _, primaryRunes := range *allRunes {
+		var totalScore float64
+		var runeSet []int
+		for sIdx, slot := range primaryRunes.Slots {
+			sort.Slice(slot.Runes, func(i, j int) bool {
+				aId := strconv.Itoa(slot.Runes[i].Id)
+				bId := strconv.Itoa(slot.Runes[j].Id)
+				a := runes[aId]
+				b := runes[bId]
+				aScore := scorer(a.WinRate, a.Frequency)
+				bScore := scorer(b.WinRate, b.Frequency)
+				scoreMap[slot.Runes[i].Id] = aScore
+				scoreMap[slot.Runes[j].Id] = bScore
+
+				return aScore > bScore
+			})
+			runeSet = append(runeSet, slot.Runes[0].Id)
+
+			rId := slot.Runes[0].Id
+			if sIdx == 0 {
+				totalScore += 3 * scoreMap[rId]
+			} else {
+				totalScore += scoreMap[rId]
+			}
+		}
+
+		if totalScore > bestScore {
+			bestScore = totalScore
+		}
+
+		perkStyles = append(perkStyles, PerkStyleItem{
+			Style:     primaryRunes.Id,
+			MainScore: totalScore,
+			Runes:     runeSet,
+		})
+
+		subPerks := generateOptimalSubPerks(runes)
+		fmt.Println(subPerks)
+	}
+
+	fmt.Println(perkStyles)
 }
 
 func getChampionData(champion ChampionItem, version string) (*ChampionDataResp, error) {
@@ -178,6 +278,8 @@ func getChampionData(champion ChampionItem, version string) (*ChampionDataResp, 
 	}
 	fmt.Println(champion.Id, itemBuild)
 
+	generateOptimalPerks(data.Runes)
+
 	return &data, nil
 }
 
@@ -190,6 +292,10 @@ func ImportMB(championAliasList map[string]ChampionItem) {
 	cnt := 0
 	ch := make(chan ChampionDataResp, len(championAliasList))
 	for _, champion := range championAliasList {
+		//if cnt > 3 {
+		//	break
+		//}
+
 		if cnt%7 == 0 {
 			time.Sleep(time.Second * 5)
 		}
