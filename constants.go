@@ -15,3 +15,9 @@ var ConsumableItems = []string{
 }
 
 var WardItems = []string{"2055"}
+
+var Fragments = [][]int{
+	{5008, 5005, 5007},
+	{5008, 5002, 5003},
+	{5001, 5002, 5003},
+}

@@ -48,17 +48,27 @@ type ScoreItem struct {
 	Score   float64 `json:"score"`
 }
 
-type PerkStyleItem struct {
-	Style     int     `json:"style"`
-	MainScore float64 `json:"mainScore"`
-	Runes     []int   `json:"runes"`
-}
-
 type SubPerkItem struct {
 	Rune0 RespRuneItem `json:"perk0"`
 	Rune1 RespRuneItem `json:"perk1"`
 	Score float64      `json:"score"`
 	Style int          `json:"style"`
+}
+
+type OptimalSubPerk struct {
+	SubRunes []int   `json:"subRunes"`
+	SubStyle int     `json:"subStyle"`
+	SubScore float64 `json:"subScore"`
+}
+
+type PerkStyleItem struct {
+	Style     int     `json:"style"`
+	Score     float64 `json:"mainScore"`
+	Runes     []int   `json:"runes"`
+	SubStyle  int     `json:"subStyle"`
+	SubScore  float64 `json:"subScore"`
+	SubRunes  []int   `json:"subRunes"`
+	Fragments []int   `json:"fragments"`
 }
 
 const MurderBridgeBUrl = `https://d23wati96d2ixg.cloudfront.net`
@@ -205,15 +215,32 @@ func generateOptimalSubPerks(runes map[string]StatItem) []SubPerkItem {
 	return optimalSubPerks
 }
 
-func generateOptimalPerks(runes map[string]StatItem) {
+func generateOptimalPerks(runes map[string]StatItem) []PerkStyleItem {
 	var bestScore float64
-	var perkStyles []PerkStyleItem
+	var result []PerkStyleItem
 	scoreMap := make(map[int]float64)
 
-	for _, primaryRunes := range *allRunes {
+	var fragments []int
+	for _, ids := range Fragments {
+		sort.Slice(ids, func(i, j int) bool {
+			iid := strconv.Itoa(ids[i])
+			jid := strconv.Itoa(ids[j])
+			iScore := scorer(runes[iid].WinRate, runes[iid].Frequency)
+			jScore := scorer(runes[jid].WinRate, runes[jid].Frequency)
+
+			scoreMap[ids[i]] = iScore
+			scoreMap[ids[j]] = jScore
+
+			return iScore > jScore
+		})
+		fragments = append(fragments, ids[0])
+	}
+
+	for _, primaryRuneSlot := range *allRunes {
 		var totalScore float64
 		var runeSet []int
-		for sIdx, slot := range primaryRunes.Slots {
+
+		for sIdx, slot := range primaryRuneSlot.Slots {
 			sort.Slice(slot.Runes, func(i, j int) bool {
 				aId := strconv.Itoa(slot.Runes[i].Id)
 				bId := strconv.Itoa(slot.Runes[j].Id)
@@ -240,31 +267,64 @@ func generateOptimalPerks(runes map[string]StatItem) {
 			bestScore = totalScore
 		}
 
-		perkStyles = append(perkStyles, PerkStyleItem{
-			Style:     primaryRunes.Id,
-			MainScore: totalScore,
-			Runes:     runeSet,
-		})
+		primaryPerk := PerkStyleItem{
+			Style: primaryRuneSlot.Id,
+			Score: totalScore,
+			Runes: runeSet,
+		}
 
 		subPerks := generateOptimalSubPerks(runes)
 		fmt.Println(subPerks)
+
+		var bestSubPerks []OptimalSubPerk
+		for _, s := range subPerks {
+			if s.Style == primaryRuneSlot.Id {
+				continue
+			}
+
+			if len(bestSubPerks) < 2 {
+				bestSubPerks = append(bestSubPerks, OptimalSubPerk{
+					SubStyle: s.Style,
+					SubScore: s.Score,
+					SubRunes: []int{s.Rune0.Id, s.Rune1.Id},
+				})
+			}
+		}
+
+		for _, s := range bestSubPerks {
+			result = append(result, PerkStyleItem{
+				Style:     primaryPerk.Style,
+				Score:     primaryPerk.Score,
+				Runes:     primaryPerk.Runes,
+				SubStyle:  s.SubStyle,
+				SubScore:  s.SubScore,
+				SubRunes:  s.SubRunes,
+				Fragments: fragments,
+			})
+		}
 	}
 
-	fmt.Println(perkStyles)
+	return result
 }
 
-func getChampionData(champion ChampionItem, version string) (*ChampionDataResp, error) {
+func getChampionData(champion ChampionItem, version string) (*ChampionDataItem, error) {
 	url := MurderBridgeBUrl + `/save/` + version + `/ARAM/` + champion.Id + `.json`
 	body, err := MakeRequest(url)
 	if err != nil {
 		return nil, err
 	}
 
+	result := ChampionDataItem{
+		Id: champion.Id,
+		Version: version,
+		Alias: champion.Id,
+		Name: champion.Name,
+	}
 	var data ChampionDataResp
 	_ = json.Unmarshal(body, &data)
 	key, _ := strconv.Atoi(champion.Key)
 
-	itemBuild := ItemBuild{
+	build := ItemBuild{
 		Title:               `[MB] ` + champion.Id,
 		AssociatedMaps:      []int{12},
 		AssociatedChampions: []int{key},
@@ -276,11 +336,30 @@ func getChampionData(champion ChampionItem, version string) (*ChampionDataResp, 
 		Type:                "custom",
 		Blocks:              makeBlocks(data),
 	}
-	fmt.Println(champion.Id, itemBuild)
+	result.ItemBuilds = append(result.ItemBuilds, build)
 
-	generateOptimalPerks(data.Runes)
+	optimalRunes := generateOptimalPerks(data.Runes)
+	for _, r := range optimalRunes {
+		item := RuneItem{
+			Alias: champion.Id,
+			Name: champion.Name,
+			Position: ``,
+			PrimaryStyleId: r.Style,
+			SubStyleId: r.SubStyle,
+		}
+		for _, i := range r.Runes {
+			item.SelectedPerkIds = append(item.SelectedPerkIds, i)
+		}
+		for _, i := range r.SubRunes {
+			item.SelectedPerkIds = append(item.SelectedPerkIds, i)
+		}
+		for _, i := range r.Fragments {
+			item.SelectedPerkIds = append(item.SelectedPerkIds, i)
+		}
+		result.Runes = append(result.Runes, item)
+	}
 
-	return &data, nil
+	return &result, nil
 }
 
 func ImportMB(championAliasList map[string]ChampionItem) {
@@ -290,12 +369,11 @@ func ImportMB(championAliasList map[string]ChampionItem) {
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
-	ch := make(chan ChampionDataResp, len(championAliasList))
+	ch := make(chan ChampionDataItem, len(championAliasList))
 	for _, champion := range championAliasList {
 		//if cnt > 3 {
 		//	break
 		//}
-
 		if cnt%7 == 0 {
 			time.Sleep(time.Second * 5)
 		}
