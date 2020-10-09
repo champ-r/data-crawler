@@ -26,10 +26,11 @@ type OverviewData struct {
 	Unavailable  []string           `json:"unavailable"`
 }
 
-const OPGG = `https://www.op.gg/champion`
+const OPGG = `op.gg`
+const OPGGUrl = `https://www.op.gg/champion`
 
 func genOverview(allChampions map[string]ChampionItem, aliasList map[string]string) (*OverviewData, int) {
-	doc, err := ParseHTML(OPGG + `/statistics`)
+	doc, err := ParseHTML(OPGGUrl + `/statistics`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,7 +70,7 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 	} else if position == `bottom` {
 		pos = `bot`
 	}
-	url := OPGG + "/" + alias + "/statistics/" + pos
+	url := OPGGUrl + "/" + alias + "/statistics/" + pos
 
 	doc, err := ParseHTML(url)
 	if err != nil {
@@ -200,7 +201,7 @@ func worker(champ ChampionListItem, position string, index int) *ChampionDataIte
 	time.Sleep(time.Second * 1)
 
 	alias := champ.Alias
-	fmt.Printf("⌛️️ No.%d, %s @ %s\n", index, alias, position)
+	fmt.Printf("⌛ [OP.GG]️️ No.%d, %s @ %s\n", index, alias, position)
 
 	id, _ := strconv.Atoi(champ.Id)
 	d, _ := genPositionData(alias, position, id)
@@ -210,17 +211,16 @@ func worker(champ ChampionListItem, position string, index int) *ChampionDataIte
 		d.Name = champ.Name
 	}
 
-	fmt.Printf("🌟 No.%d, %s @ %s\n", index, alias, position)
+	fmt.Printf("🌟 [OP.GG] No.%d, %s @ %s\n", index, alias, position)
 	return d
 }
 
-func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]string, officialVer string) {
-	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
+func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]string, officialVer string, timestamp int64) {
 	start := time.Now()
-	fmt.Println("🤖 Start...")
+	fmt.Println("🤖 [OP.GG] Start...")
 
 	d, count := genOverview(allChampions, aliasList)
-	fmt.Printf("🤪 Got champions & positions, count: %d \n", count)
+	fmt.Printf("🤪 [OP.GG] Got champions & positions, count: %d \n", count)
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
@@ -250,7 +250,7 @@ func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]strin
 	wg.Wait()
 	close(ch)
 
-	outputPath := filepath.Join(".", "output", "op.gg")
+	outputPath := filepath.Join(".", "output", OPGG)
 	_ = os.MkdirAll(outputPath, os.ModePerm)
 
 	failed := 0
@@ -276,14 +276,16 @@ func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]strin
 		Timestamp:       timestamp,
 		SourceVersion:   d.Version,
 		OfficialVersion: officialVer,
+		PkgName:         OPGG,
 	})
-	_ = ioutil.WriteFile("output/op.gg/package.json", []byte(pkg), 0644)
+	_ = ioutil.WriteFile("output/"+ OPGG +"/package.json", []byte(pkg), 0644)
 
 	duration := time.Since(start)
-	fmt.Printf("🟢 All finished, success: %d, failed: %d, took %s \n", cnt-failed, failed, duration)
+	fmt.Printf("🟢 [OP.GG] All finished, success: %d, failed: %d, took %s \n", cnt-failed, failed, duration)
 }
 
 func main() {
+	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
 	allChampionData, officialVer, err := GetChampionList()
 	if err != nil {
 		log.Fatal(err)
@@ -294,8 +296,6 @@ func main() {
 		championAliasList[v.Name] = k
 	}
 
-	//ImportMB(allChampionData.Data)
-	//return
-
-	ImportOPGG(allChampionData.Data, championAliasList, officialVer)
+	ImportMB(allChampionData.Data, timestamp)
+	ImportOPGG(allChampionData.Data, championAliasList, officialVer, timestamp)
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@champ-r/op.gg",
+  "name": "@champ-r/{{ .PkgName }}",
   "version": "{{ .OfficialVersion }}-v{{ .Timestamp }}",
   "sourceVersion": "{{ .SourceVersion }}",
   "description": "LoL champion statistics from op.gg.",

@@ -3,7 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"sync"
@@ -71,6 +74,7 @@ type PerkStyleItem struct {
 	Fragments []int   `json:"fragments"`
 }
 
+const MurderBridge = `murderbridge`
 const MurderBridgeBUrl = `https://d23wati96d2ixg.cloudfront.net`
 const e = 2.71828
 const generalMean = 2.5
@@ -274,7 +278,6 @@ func generateOptimalPerks(runes map[string]StatItem) []PerkStyleItem {
 		}
 
 		subPerks := generateOptimalSubPerks(runes)
-		fmt.Println(subPerks)
 
 		var bestSubPerks []OptimalSubPerk
 		for _, s := range subPerks {
@@ -307,7 +310,7 @@ func generateOptimalPerks(runes map[string]StatItem) []PerkStyleItem {
 	return result
 }
 
-func getChampionData(champion ChampionItem, version string) (*ChampionDataItem, error) {
+func genChampionData(champion ChampionItem, version string, timestamp int64) (*ChampionDataItem, error) {
 	url := MurderBridgeBUrl + `/save/` + version + `/ARAM/` + champion.Id + `.json`
 	body, err := MakeRequest(url)
 	if err != nil {
@@ -315,10 +318,11 @@ func getChampionData(champion ChampionItem, version string) (*ChampionDataItem, 
 	}
 
 	result := ChampionDataItem{
-		Id: champion.Id,
-		Version: version,
-		Alias: champion.Id,
-		Name: champion.Name,
+		Id:        champion.Id,
+		Version:   version,
+		Alias:     champion.Id,
+		Name:      champion.Name,
+		Timestamp: timestamp,
 	}
 	var data ChampionDataResp
 	_ = json.Unmarshal(body, &data)
@@ -341,11 +345,11 @@ func getChampionData(champion ChampionItem, version string) (*ChampionDataItem, 
 	optimalRunes := generateOptimalPerks(data.Runes)
 	for _, r := range optimalRunes {
 		item := RuneItem{
-			Alias: champion.Id,
-			Name: champion.Name,
-			Position: ``,
+			Alias:          champion.Id,
+			Name:           champion.Name,
+			Position:       ``,
 			PrimaryStyleId: r.Style,
-			SubStyleId: r.SubStyle,
+			SubStyleId:     r.SubStyle,
 		}
 		for _, i := range r.Runes {
 			item.SelectedPerkIds = append(item.SelectedPerkIds, i)
@@ -359,10 +363,14 @@ func getChampionData(champion ChampionItem, version string) (*ChampionDataItem, 
 		result.Runes = append(result.Runes, item)
 	}
 
+	fmt.Printf("🤪 [MB] %s: Fetched data. \n", result.Alias)
 	return &result, nil
 }
 
-func ImportMB(championAliasList map[string]ChampionItem) {
+func ImportMB(championAliasList map[string]ChampionItem, timestamp int64) {
+	start := time.Now()
+	fmt.Println("🌉 [MB]: Start...")
+
 	ver, _ := getLatestVersion()
 	items, _ = GetItemList(ver)
 	runeLoopUp, allRunes, _ = GetRunesReforged(ver)
@@ -375,22 +383,40 @@ func ImportMB(championAliasList map[string]ChampionItem) {
 		//	break
 		//}
 		if cnt%7 == 0 {
+			fmt.Println(`🌉 Take a break...`)
 			time.Sleep(time.Second * 5)
 		}
 
 		cnt += 1
 		wg.Add(1)
-		go func(_champion ChampionItem, _ver string, _cnt int) {
-			d, err := getChampionData(_champion, _ver)
+		go func(_champion ChampionItem, _ver string, _cnt int, _timestamp int64) {
+			d, err := genChampionData(_champion, _ver, timestamp)
 			if d != nil {
 				ch <- *d
 			} else {
 				fmt.Println(_champion.Id, err)
 			}
 			wg.Done()
-		}(champion, ver, cnt)
+		}(champion, ver, cnt, timestamp)
 	}
 	wg.Wait()
+	close(ch)
 
-	fmt.Printf(`done, %v`, ch)
+	outputPath := filepath.Join(".", "output", MurderBridge)
+	_ = os.MkdirAll(outputPath, os.ModePerm)
+
+	for data := range ch {
+		fileName := outputPath + "/" + data.Alias + ".json"
+		_ = SaveJSON(fileName, data)
+	}
+	pkg, _ := GenPkgInfo("tpl/package.json", PkgInfo{
+		Timestamp:       timestamp,
+		SourceVersion:   ver,
+		OfficialVersion: ver,
+		PkgName:         MurderBridge,
+	})
+	_ = ioutil.WriteFile("output/"+MurderBridge+"/package.json", []byte(pkg), 0644)
+
+	duration := time.Since(start)
+	fmt.Printf("🟢 [MB] Finished. Took %s. \n", duration)
 }
