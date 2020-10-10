@@ -382,7 +382,7 @@ func ImportMB(championAliasList map[string]ChampionItem, timestamp int64) {
 		//if cnt > 3 {
 		//	break
 		//}
-		if cnt%7 == 0 {
+		if cnt > 0 && cnt%7 == 0 {
 			fmt.Println(`🌉 Take a break...`)
 			time.Sleep(time.Second * 5)
 		}
@@ -407,7 +407,8 @@ func ImportMB(championAliasList map[string]ChampionItem, timestamp int64) {
 
 	for data := range ch {
 		fileName := outputPath + "/" + data.Alias + ".json"
-		_ = SaveJSON(fileName, data)
+		content := []ChampionDataItem{data}
+		_ = SaveJSON(fileName, content)
 	}
 	pkg, _ := GenPkgInfo("tpl/package.json", PkgInfo{
 		Timestamp:       timestamp,
