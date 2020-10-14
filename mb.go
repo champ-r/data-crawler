@@ -346,7 +346,7 @@ func genChampionData(champion ChampionItem, version string, timestamp int64) (*C
 	for _, r := range optimalRunes {
 		item := RuneItem{
 			Alias:          champion.Id,
-			Name:           champion.Name,
+			Name:           `[MB] ` + champion.Name,
 			Position:       ``,
 			PrimaryStyleId: r.Style,
 			SubStyleId:     r.SubStyle,

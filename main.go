@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -192,6 +193,10 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 		runeItem.Name = "[OP.GG] " + alias + "@" + position + " - " + runeItem.WinRate + ", " + runeItem.PickCount
 
 		d.Runes = append(d.Runes, runeItem)
+	})
+
+	sort.Slice(d.Runes, func(i, j int) bool {
+		return d.Runes[i].PickCount > d.Runes[j].PickCount
 	})
 
 	return &d, nil
