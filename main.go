@@ -188,6 +188,7 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 		runeItem.SubStyleId, _ = strconv.Atoi(MatchId(sIdSrc))
 
 		runeItem.PickCount = tr.Find(`.champion-overview__stats--pick .pick-ratio__text`).Next().Next().Text()
+		runeItem.PickCount = strings.ReplaceAll(runeItem.PickCount, `,`, ``)
 		runeItem.WinRate = tr.Find(`.champion-overview__stats--pick .win-ratio__text`).Next().Text()
 
 		runeItem.Name = "[OP.GG] " + alias + "@" + position + " - " + runeItem.WinRate + ", " + runeItem.PickCount
