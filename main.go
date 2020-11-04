@@ -221,7 +221,7 @@ func worker(champ ChampionListItem, position string, index int) *ChampionDataIte
 	return d
 }
 
-func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]string, officialVer string, timestamp int64) {
+func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]string, officialVer string, timestamp int64) string {
 	start := time.Now()
 	fmt.Println("🤖 [OP.GG] Start...")
 
@@ -232,14 +232,9 @@ func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]strin
 	cnt := 0
 	ch := make(chan ChampionDataItem, count)
 
-	//output:
 	for _, cur := range d.ChampionList {
 		for _, p := range cur.Positions {
 			cnt += 1
-
-			//if cnt > 8 {
-			//	break output
-			//}
 
 			if cnt%7 == 0 {
 				time.Sleep(time.Second * 5)
@@ -284,10 +279,10 @@ func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]strin
 		OfficialVersion: officialVer,
 		PkgName:         OPGG,
 	})
-	_ = ioutil.WriteFile("output/"+ OPGG +"/package.json", []byte(pkg), 0644)
+	_ = ioutil.WriteFile("output/"+OPGG+"/package.json", []byte(pkg), 0644)
 
 	duration := time.Since(start)
-	fmt.Printf("🟢 [OP.GG] All finished, success: %d, failed: %d, took %s \n", cnt-failed, failed, duration)
+	return fmt.Sprintf("🟢 [OP.GG] All finished, success: %d, failed: %d, took %s", cnt-failed, failed, duration)
 }
 
 func main() {
@@ -302,6 +297,16 @@ func main() {
 		championAliasList[v.Name] = k
 	}
 
-	ImportMB(allChampionData.Data, timestamp)
-	ImportOPGG(allChampionData.Data, championAliasList, officialVer, timestamp)
+	ch := make(chan string)
+	go func() {
+		ch <- ImportOPGG(allChampionData.Data, championAliasList, officialVer, timestamp)
+	}()
+	go func() {
+		ch <- ImportMB(allChampionData.Data, timestamp)
+	}()
+
+	x := <-ch
+	y := <-ch
+	fmt.Println(x)
+	fmt.Println(y)
 }

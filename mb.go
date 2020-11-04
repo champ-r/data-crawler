@@ -367,7 +367,7 @@ func genChampionData(champion ChampionItem, version string, timestamp int64) (*C
 	return &result, nil
 }
 
-func ImportMB(championAliasList map[string]ChampionItem, timestamp int64) {
+func ImportMB(championAliasList map[string]ChampionItem, timestamp int64) string {
 	start := time.Now()
 	fmt.Println("🌉 [MB]: Start...")
 
@@ -419,5 +419,6 @@ func ImportMB(championAliasList map[string]ChampionItem, timestamp int64) {
 	_ = ioutil.WriteFile("output/"+MurderBridge+"/package.json", []byte(pkg), 0644)
 
 	duration := time.Since(start)
-	fmt.Printf("🟢 [MB] Finished. Took %s. \n", duration)
+
+	return fmt.Sprintf("🟢 [MB] Finished. Took %s.", duration)
 }
