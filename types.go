@@ -33,7 +33,6 @@ type RuneItem struct {
 	SubStyleId      int     `json:"subStyleId"`
 	SelectedPerkIds []int   `json:"selectedPerkIds"`
 	Score           float64 `json:"score"`
-	SubScore        float64 `json:"SubScore"`
 }
 
 type ChampionDataItem struct {
