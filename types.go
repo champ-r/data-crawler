@@ -24,14 +24,16 @@ type ItemBuild struct {
 }
 
 type RuneItem struct {
-	Alias           string `json:"alias"`
-	Name            string `json:"name"`
-	Position        string `json:"position"`
-	PickCount       string `json:"pickCount"`
-	WinRate         string `json:"winRate"`
-	PrimaryStyleId  int    `json:"primaryStyleId"`
-	SubStyleId      int    `json:"subStyleId"`
-	SelectedPerkIds []int  `json:"selectedPerkIds"`
+	Alias           string  `json:"alias"`
+	Name            string  `json:"name"`
+	Position        string  `json:"position"`
+	PickCount       int     `json:"pickCount"`
+	WinRate         string  `json:"winRate"`
+	PrimaryStyleId  int     `json:"primaryStyleId"`
+	SubStyleId      int     `json:"subStyleId"`
+	SelectedPerkIds []int   `json:"selectedPerkIds"`
+	Score           float64 `json:"score"`
+	SubScore        float64 `json:"SubScore"`
 }
 
 type ChampionDataItem struct {

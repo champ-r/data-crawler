@@ -187,11 +187,11 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 		sIdSrc, _ := tr.Find(`.perk-page__item--mark img`).Last().Attr(`src`)
 		runeItem.SubStyleId, _ = strconv.Atoi(MatchId(sIdSrc))
 
-		runeItem.PickCount = tr.Find(`.champion-overview__stats--pick .pick-ratio__text`).Next().Next().Text()
-		runeItem.PickCount = strings.ReplaceAll(runeItem.PickCount, `,`, ``)
+		pickCount := tr.Find(`.champion-overview__stats--pick .pick-ratio__text`).Next().Next().Text()
+		runeItem.PickCount, _ = strconv.Atoi(strings.ReplaceAll(pickCount, `,`, ``))
 		runeItem.WinRate = tr.Find(`.champion-overview__stats--pick .win-ratio__text`).Next().Text()
 
-		runeItem.Name = "[OP.GG] " + alias + "@" + position + " - " + runeItem.WinRate + ", " + runeItem.PickCount
+		runeItem.Name = "[OP.GG] " + alias + "@" + position + " - " + runeItem.WinRate + ", " + fmt.Sprint(runeItem.PickCount)
 
 		d.Runes = append(d.Runes, runeItem)
 	})

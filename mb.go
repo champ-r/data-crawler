@@ -350,6 +350,8 @@ func genChampionData(champion ChampionItem, version string, timestamp int64) (*C
 			Position:       ``,
 			PrimaryStyleId: r.Style,
 			SubStyleId:     r.SubStyle,
+			Score:          r.Score,
+			SubScore:       r.SubScore,
 		}
 		for _, i := range r.Runes {
 			item.SelectedPerkIds = append(item.SelectedPerkIds, i)
