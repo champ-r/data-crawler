@@ -78,7 +78,7 @@ const MurderBridge = `murderbridge`
 const MurderBridgeBUrl = `https://d23wati96d2ixg.cloudfront.net`
 const e = 2.71828
 const generalMean = 2.5
-const generalRatio = 50
+const generalRatio = float64(50)
 const spread = 100 - generalRatio
 
 var items *map[string]BuildItem
