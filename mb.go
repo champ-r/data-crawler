@@ -307,6 +307,10 @@ func generateOptimalPerks(runes map[string]StatItem) []PerkStyleItem {
 		}
 	}
 
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Score > result[j].Score
+	})
+
 	return result
 }
 
