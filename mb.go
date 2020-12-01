@@ -329,7 +329,7 @@ func genChampionData(champion ChampionItem, version string, timestamp int64) (*C
 	key, _ := strconv.Atoi(champion.Key)
 
 	build := ItemBuild{
-		Title:               `[MB] ` + champion.Id,
+		Title:               `[MB] ` + champion.Id + ` ` + version,
 		AssociatedMaps:      []int{12},
 		AssociatedChampions: []int{key},
 		Map:                 "any",
