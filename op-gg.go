@@ -64,7 +64,7 @@ func genOverview(allChampions map[string]ChampionItem, aliasList map[string]stri
 	return &d, count
 }
 
-func genPositionData(alias string, position string, id int) (*ChampionDataItem, error) {
+func genPositionData(alias string, position string, id int, version string) (*ChampionDataItem, error) {
 	pos := position
 	if position == `middle` {
 		pos = `mid`
@@ -97,7 +97,7 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 	})
 
 	build := ItemBuild{
-		Title:               "[OP.GG] " + alias + " @ " + position,
+		Title:               "[OP.GG] " + alias + " @ " + position + ` ` + version,
 		AssociatedMaps:      []int{11, 12},
 		AssociatedChampions: []int{id},
 		Map:                 "any",
@@ -203,14 +203,14 @@ func genPositionData(alias string, position string, id int) (*ChampionDataItem, 
 	return &d, nil
 }
 
-func worker(champ ChampionListItem, position string, index int) *ChampionDataItem {
+func worker(champ ChampionListItem, position string, index int, version string) *ChampionDataItem {
 	time.Sleep(time.Second * 1)
 
 	alias := champ.Alias
 	fmt.Printf("⌛ [OP.GG]️️ No.%d, %s @ %s\n", index, alias, position)
 
 	id, _ := strconv.Atoi(champ.Id)
-	d, _ := genPositionData(alias, position, id)
+	d, _ := genPositionData(alias, position, id, version)
 	if d != nil {
 		d.Index = index
 		d.Id = champ.Id
@@ -241,10 +241,10 @@ func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]strin
 			}
 
 			wg.Add(1)
-			go func(_cur ChampionListItem, _p string, _cnt int) {
-				ch <- *worker(_cur, _p, _cnt)
+			go func(_cur ChampionListItem, _p string, _cnt int, _ver string) {
+				ch <- *worker(_cur, _p, _cnt, _ver)
 				wg.Done()
-			}(cur, p, cnt)
+			}(cur, p, cnt, officialVer)
 		}
 	}
 
