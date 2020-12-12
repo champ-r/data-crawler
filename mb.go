@@ -114,7 +114,7 @@ func scorer(winRate float64, frequency float64) float64 {
 }
 
 func getItemList(data map[string]StatItem, limit int) []ScoreItem {
-	var keyScoreMap []ScoreItem
+	keyScoreMap := []ScoreItem{}
 	for k, v := range data {
 		item := ScoreItem{
 			Score:   scorer(v.WinRate, v.Frequency),
@@ -127,6 +127,13 @@ func getItemList(data map[string]StatItem, limit int) []ScoreItem {
 		return keyScoreMap[i].Score > keyScoreMap[j].Score
 	})
 
+	l := len(keyScoreMap)
+	if l == 0 {
+		return keyScoreMap
+	}
+	if limit > l {
+		return keyScoreMap[0:l]
+	}
 	return keyScoreMap[0:limit]
 }
 
