@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+go=$(which go)
+npm=$(which npm)
+
 go build .
 ./data-crawler
 cp output/index.json output/op.gg/
