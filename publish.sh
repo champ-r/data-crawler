@@ -3,7 +3,7 @@
 set -eo pipefail
 
 go build .
-./data-crawler
+./data-crawler -opgg -mb
 cp output/index.json output/op.gg/
 cp output/index.json output/murderbridge/
 

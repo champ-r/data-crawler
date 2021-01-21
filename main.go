@@ -1,12 +1,20 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 )
 
 func main() {
+	opggFlag := flag.Bool("opgg", false, "Fetch & generate data from op.gg")
+	mbFlag := flag.Bool("mb", false, "Fetch & generate murderbridge.com")
+
+	flag.Parse()
+	fmt.Println(os.Args)
+
 	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
 	allChampionData, officialVer, err := GetChampionList()
 	if err != nil {
@@ -19,15 +27,28 @@ func main() {
 	}
 
 	ch := make(chan string)
-	go func() {
-		ch <- ImportOPGG(allChampionData.Data, championAliasList, officialVer, timestamp)
-	}()
-	go func() {
-		ch <- ImportMB(allChampionData.Data, timestamp)
-	}()
+	var opgg, mb string
 
-	x := <-ch
-	y := <-ch
-	fmt.Println(x)
-	fmt.Println(y)
+	if *opggFlag {
+		fmt.Println("[CMD] Fetch data from op.gg")
+		go func() {
+			ch <- ImportOPGG(allChampionData.Data, championAliasList, officialVer, timestamp)
+		}()
+	}
+
+	if *mbFlag {
+		fmt.Println("[CMD] Fetch data from murderbridge.com")
+		go func() {
+			ch <- ImportMB(allChampionData.Data, timestamp)
+		}()
+	}
+
+	opgg = <- ch
+	mb = <- ch
+	if opgg != "" {
+		fmt.Println(opgg)
+	}
+	if mb != "" {
+		fmt.Println(mb)
+	}
 }
