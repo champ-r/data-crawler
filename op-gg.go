@@ -137,7 +137,7 @@ func genPositionData(alias string, position string, id int, version string) (*Ch
 				var block ItemBuildBlockItem
 				block.Type = `Recommended Builds: Pick ` + pickCnt + `, Win Rate` + winRate
 
-				selection.Find("li.champion-stats__list__item img").Each(func(i int, img *goquery.Selection) {
+				tr.Find("li.champion-stats__list__item img").Each(func(i int, img *goquery.Selection) {
 					src, _ := img.Attr("src")
 					id := MatchId(src)
 					block.Items = append(block.Items, BlockItem{
