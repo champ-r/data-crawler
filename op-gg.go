@@ -118,7 +118,7 @@ func genPositionData(alias string, position string, id int, version string) (*Ch
 
 			pickCnt := strings.ReplaceAll(selection.Find(`td.champion-overview__stats--pick.champion-overview__border > span`).Text(), `,`, ``)
 			winRate := selection.Find(`td.champion-overview__stats--win.champion-overview__border > strong`).Text()
-			firstBlock.Type = `Recommended Builds: Pick ` + pickCnt + `, Win Rate` + winRate
+			firstBlock.Type = `Recommended build: Pick ` + pickCnt + `, Win Rate ` + winRate
 			selection.Find("li.champion-stats__list__item img").Each(func(i int, img *goquery.Selection) {
 				src, _ := img.Attr("src")
 				id := MatchId(src)
@@ -135,7 +135,7 @@ func genPositionData(alias string, position string, id int, version string) (*Ch
 				winRate := tr.Find(`td.champion-overview__stats--win.champion-overview__border > strong`).Text()
 
 				var block ItemBuildBlockItem
-				block.Type = `Recommended Builds: Pick ` + pickCnt + `, Win Rate` + winRate
+				block.Type = `Recommended build: Pick ` + pickCnt + `, Win Rate ` + winRate
 
 				tr.Find("li.champion-stats__list__item img").Each(func(i int, img *goquery.Selection) {
 					src, _ := img.Attr("src")
