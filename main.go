@@ -11,6 +11,7 @@ import (
 func main() {
 	opggFlag := flag.Bool("opgg", false, "Fetch & generate data from op.gg")
 	mbFlag := flag.Bool("mb", false, "Fetch & generate murderbridge.com")
+	debugFlag := flag.Bool("debug", false, "only for debug")
 
 	flag.Parse()
 	fmt.Println(os.Args)
@@ -32,7 +33,7 @@ func main() {
 	if *opggFlag {
 		fmt.Println("[CMD] Fetch data from op.gg")
 		go func() {
-			ch <- ImportOPGG(allChampionData.Data, championAliasList, officialVer, timestamp)
+			ch <- ImportOPGG(allChampionData.Data, championAliasList, officialVer, timestamp, *debugFlag)
 		}()
 	}
 

@@ -110,8 +110,50 @@ func genPositionData(alias string, position string, id int, version string) (*Ch
 
 	// item builds
 	doc.Find(`.champion-overview__table:nth-child(2) .champion-overview__row--first`).Each(func(blockIdx int, selection *goquery.Selection) {
+		blockType := strings.TrimSpace(selection.Find(`th.champion-overview__sub-header`).Text())
+		isRecommendedBuild := strings.Contains(strings.ToLower(blockType), `recommended builds`)
+
+		if isRecommendedBuild {
+			var firstBlock ItemBuildBlockItem
+
+			pickCnt := strings.ReplaceAll(selection.Find(`td.champion-overview__stats--pick.champion-overview__border > span`).Text(), `,`, ``)
+			winRate := selection.Find(`td.champion-overview__stats--win.champion-overview__border > strong`).Text()
+			firstBlock.Type = `Recommended Builds: Pick ` + pickCnt + `, Win Rate` + winRate
+			selection.Find("li.champion-stats__list__item img").Each(func(i int, img *goquery.Selection) {
+				src, _ := img.Attr("src")
+				id := MatchId(src)
+				firstBlock.Items = append(firstBlock.Items, BlockItem{
+					Id: id,
+					Count: 1,
+				})
+			})
+
+			build.Blocks = append(build.Blocks, firstBlock)
+
+			selection.NextUntil(`tr.champion-overview__row--first`).Each(func(trIdx int, tr *goquery.Selection) {
+				pickCnt := strings.ReplaceAll(tr.Find(`td.champion-overview__stats--pick.champion-overview__border > span`).Text(), `,`, ``)
+				winRate := tr.Find(`td.champion-overview__stats--win.champion-overview__border > strong`).Text()
+
+				var block ItemBuildBlockItem
+				block.Type = `Recommended Builds: Pick ` + pickCnt + `, Win Rate` + winRate
+
+				selection.Find("li.champion-stats__list__item img").Each(func(i int, img *goquery.Selection) {
+					src, _ := img.Attr("src")
+					id := MatchId(src)
+					block.Items = append(block.Items, BlockItem{
+						Id: id,
+						Count: 1,
+					})
+				})
+
+				build.Blocks = append(build.Blocks, block)
+			})
+
+			return
+		}
+
 		var block ItemBuildBlockItem
-		block.Type = strings.TrimSpace(selection.Find(`th.champion-overview__sub-header`).Text())
+		block.Type = blockType
 
 		var itemIds []string
 		selection.Find("li.champion-stats__list__item img").Each(func(i int, img *goquery.Selection) {
@@ -221,7 +263,7 @@ func worker(champ ChampionListItem, position string, index int, version string) 
 	return d
 }
 
-func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]string, officialVer string, timestamp int64) string {
+func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]string, officialVer string, timestamp int64, debug bool) string {
 	start := time.Now()
 	fmt.Println("🤖 [OP.GG] Start...")
 
@@ -232,11 +274,16 @@ func ImportOPGG(allChampions map[string]ChampionItem, aliasList map[string]strin
 	cnt := 0
 	ch := make(chan ChampionDataItem, count)
 
+	listLoop:
 	for _, cur := range d.ChampionList {
 		for _, p := range cur.Positions {
 			cnt += 1
 
 			if cnt%7 == 0 {
+				if debug {
+					wg.Done()
+					break listLoop
+				}
 				time.Sleep(time.Second * 5)
 			}
 
