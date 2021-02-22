@@ -11,48 +11,55 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.16
-
-      - name: Setup Node
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14.x'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Build binary & Generate packages
+      - name: test
+        env: 
+          TOKEN: ${{ secrets.TEST_TOKEN }}
         run: |
-          go build -v ./...
-          ./data-crawler -mb -opgg
+          echo "$TOKEN" >> test.txt
+          cat test.txt
 
-      # - name: Publish @champ-r/op.gg
-      #   uses: JS-DevTools/npm-publish@v1
+      # - uses: actions/checkout@v2
+
+      # - name: Set up Go
+      #   uses: actions/setup-go@v2
       #   with:
-      #     token: ${{ secrets.NPM_TOKEN }}
-      #     package: './output/op.gg/package.json'
+      #     go-version: 1.16
 
-      # - name: Publish @champ-r/murderbridge
-      #   uses: JS-DevTools/npm-publish@v1
+      # - name: Setup Node
+      #   uses: actions/setup-node@v2
       #   with:
-      #     token: ${{ secrets.NPM_TOKEN }}
-      #     package: './output/murderbridge/package.json'
+      #     node-version: '14.x'
+      #     registry-url: 'https://registry.npmjs.org'
 
-      - name: Publish to npm
-        run: |
-          cd output/op.gg
-          npm publish --access public
-          cd ../murderbridge
-          npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - name: Build binary & Generate packages
+      #   run: |
+      #     go build -v ./...
+      #     ./data-crawler -mb -opgg
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: packages
-          path: |
-            output/op.gg
-            output/murderbridge
+      # # - name: Publish @champ-r/op.gg
+      # #   uses: JS-DevTools/npm-publish@v1
+      # #   with:
+      # #     token: ${{ secrets.NPM_TOKEN }}
+      # #     package: './output/op.gg/package.json'
+
+      # # - name: Publish @champ-r/murderbridge
+      # #   uses: JS-DevTools/npm-publish@v1
+      # #   with:
+      # #     token: ${{ secrets.NPM_TOKEN }}
+      # #     package: './output/murderbridge/package.json'
+
+      # - name: Publish to npm
+      #   run: |
+      #     cd output/op.gg
+      #     npm publish --access public
+      #     cd ../murderbridge
+      #     npm publish --access public
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # - uses: actions/upload-artifact@v2
+      #   with:
+      #     name: packages
+      #     path: |
+      #       output/op.gg
+      #       output/murderbridge
