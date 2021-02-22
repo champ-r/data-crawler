@@ -22,8 +22,37 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '14.x'
+          registry-url: 'https://registry.npmjs.org'
 
-      - name: Build & Publish
+      - name: Build binary & Generate packages
         run: |
-        go build -v ./...
-        ./data-crawler -h
+          go build -v ./...
+          ./data-crawler -mb -opgg
+
+      # - name: Publish @champ-r/op.gg
+      #   uses: JS-DevTools/npm-publish@v1
+      #   with:
+      #     token: ${{ secrets.NPM_TOKEN }}
+      #     package: './output/op.gg/package.json'
+
+      # - name: Publish @champ-r/murderbridge
+      #   uses: JS-DevTools/npm-publish@v1
+      #   with:
+      #     token: ${{ secrets.NPM_TOKEN }}
+      #     package: './output/murderbridge/package.json'
+
+      - name: Publish to npm
+        run: |
+          cd output/op.gg
+          npm publish --access public
+          cd ../murderbridge
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: packages
+          path: |
+            output/op.gg
+            output/murderbridge
