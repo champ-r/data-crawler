@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
+args="${@}"
 
-go build .
-./data-crawler -opgg -mb
+npm=$(command -v npm)
+
+./data-crawler $args
 cp output/index.json output/op.gg/
 cp output/index.json output/murderbridge/
 
 cd output/op.gg
-npm publish --access public
+$npm publish --access public
 
 cd ../murderbridge
-npm publish --access public
-
+$npm publish --access public

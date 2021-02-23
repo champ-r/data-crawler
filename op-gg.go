@@ -249,7 +249,7 @@ func worker(champ ChampionListItem, position string, index int, version string) 
 	time.Sleep(time.Second * 1)
 
 	alias := champ.Alias
-	fmt.Printf("⌛ [OP.GG]️️ No.%d, %s @ %s\n", index, alias, position)
+	// fmt.Printf("⌛ [OP.GG]️️ No.%d, %s @ %s\n", index, alias, position)
 
 	id, _ := strconv.Atoi(champ.Id)
 	d, _ := genPositionData(alias, position, id, version)

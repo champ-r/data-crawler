@@ -2,8 +2,8 @@
 
 args="${@}"
 
-go=$(which go)
-npm=$(which npm)
+go=$(command -v go)
+npm=$(command -v npm)
 
 $go build .
 ./data-crawler $args

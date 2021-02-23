@@ -1,0 +1,38 @@
+name: Scheduled publish
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Build
+        run: |
+          go build -v ./...
+
+      - name: Publish
+        run: |
+          npx npm-cli-adduser -u ${{ secrets.NPM_USER }} -e ${{ secrets.NPM_EMAIL }} -p ${{ secrets.NPM_PASS }}
+          ./publish.sh -mb -opgg
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: packages
+          path: |
+            output/op.gg
+            output/murderbridge
