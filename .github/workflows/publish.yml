@@ -11,13 +11,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # - name: test
-      #   env: 
-      #     TOKEN: ${{ secrets.TEST_TOKEN }}
-      #   run: |
-      #     echo "$TOKEN" >> test.txt
-      #     cat test.txt
-
       - uses: actions/checkout@v2
 
       - name: Set up Go
@@ -31,33 +24,19 @@ jobs:
           node-version: '14.x'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Build binary & Generate packages
+      - name: Build binary & Publish
         run: |
           go build -v ./...
           ./data-crawler -mb -opgg
 
-      # - name: Publish @champ-r/op.gg
-      #   uses: JS-DevTools/npm-publish@v1
-      #   with:
-      #     token: ${{ secrets.NPM_TOKEN }}
-      #     package: './output/op.gg/package.json'
-
-      # - name: Publish @champ-r/murderbridge
-      #   uses: JS-DevTools/npm-publish@v1
-      #   with:
-      #     token: ${{ secrets.NPM_TOKEN }}
-      #     package: './output/murderbridge/package.json'
-
-      - name: Publish to npm
+      - name: Publish
         run: |
-          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" >> output/op.gg/.npmrc
-          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" >> output/murderbridge/.npmrc
           cd output/op.gg
+          npx npm-cli-login -u ${{ secrets.NPM_USER }} -e ${{ secrets.NPM_EMAIL }} -p ${{ secrets.NPM_PASS }}
           npm publish --access public
           cd ../murderbridge
+          npx npm-cli-login -u ${{ secrets.NPM_USER }} -e ${{ secrets.NPM_EMAIL }} -p ${{ secrets.NPM_PASS }}
           npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - uses: actions/upload-artifact@v2
         with:
