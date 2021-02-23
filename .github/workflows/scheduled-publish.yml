@@ -1,13 +1,10 @@
-name: Publish to npm
+name: Scheduled publish
 
 on:
-  push:
-    branches: [ build/* ]
-#  pull_request:
-#    branches: [ master ]
+  schedule:
+    - cron: '0 */6 * * *'
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
