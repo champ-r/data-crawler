@@ -13,10 +13,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-#      - name: Set up Go
-#        uses: actions/setup-go@v2
-#        with:
-#          go-version: 1.16
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
 
       - name: Setup Node
         uses: actions/setup-node@v2
@@ -24,28 +24,18 @@ jobs:
           node-version: '14.x'
           registry-url: 'https://registry.npmjs.org'
 
-#      - name: Build binary & Publish
-#        run: |
-#          go build -v ./...
-#          ./data-crawler -mb -opgg
-#
-#      - name: Publish
-#        run: |
-#          cd output/op.gg
-#          npx npm-cli-login -u ${{ secrets.NPM_USER }} -e ${{ secrets.NPM_EMAIL }} -p ${{ secrets.NPM_PASS }}
-#          npm publish --access public
-#          cd ../murderbridge
-#          npx npm-cli-login -u ${{ secrets.NPM_USER }} -e ${{ secrets.NPM_EMAIL }} -p ${{ secrets.NPM_PASS }}
-#          npm publish --access public
-#
-#      - uses: actions/upload-artifact@v2
-#        with:
-#          name: packages
-#          path: |
-#            output/op.gg
-#            output/murderbridge
+      - name: Build
+        run: |
+          go build -v ./...
 
-      - name: NPM test
+      - name: Publish
         run: |
           npx npm-cli-adduser -u ${{ secrets.NPM_USER }} -e ${{ secrets.NPM_EMAIL }} -p ${{ secrets.NPM_PASS }}
-          npm whoami | rev
+          ./publish.sh -mb -opgg
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: packages
+          path: |
+            output/op.gg
+            output/murderbridge
