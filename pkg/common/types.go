@@ -1,4 +1,4 @@
-package main
+package common
 
 type BlockItem struct {
 	Id    string `json:"id"`

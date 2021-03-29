@@ -1,4 +1,4 @@
-package main
+package common
 
 var TrinketItems = []string{
 	"3340",
