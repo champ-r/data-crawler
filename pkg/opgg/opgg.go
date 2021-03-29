@@ -15,9 +15,6 @@ import (
 	"time"
 )
 
-const OPGG = `op.gg`
-const OPGGUrl = `https://www.op.gg/champion`
-
 func genPositionData(alias string, position string, id int, version string) (*common.ChampionDataItem, error) {
 	pos := position
 	if position == `middle` {
@@ -25,7 +22,7 @@ func genPositionData(alias string, position string, id int, version string) (*co
 	} else if position == `bottom` {
 		pos = `bot`
 	}
-	url := OPGGUrl + "/" + alias + "/statistics/" + pos
+	url := SourceUrl + "/" + alias + "/statistics/" + pos
 
 	doc, err := common.ParseHTML(url)
 	if err != nil {
@@ -221,7 +218,7 @@ func Import(allChampions map[string]common.ChampionItem, aliasList map[string]st
 	start := time.Now()
 	fmt.Println("🤖 [OP.GG] Start...")
 
-	d, count := genOverview(allChampions, aliasList)
+	d, count := genOverview(allChampions, aliasList, false)
 	fmt.Printf("🤪 [OP.GG] Got champions & positions, count: %d \n", count)
 
 	wg := new(sync.WaitGroup)
@@ -252,7 +249,7 @@ listLoop:
 	wg.Wait()
 	close(ch)
 
-	outputPath := filepath.Join(".", "output", OPGG)
+	outputPath := filepath.Join(".", "output", PkgName)
 	_ = os.MkdirAll(outputPath, os.ModePerm)
 
 	failed := 0
@@ -278,9 +275,9 @@ listLoop:
 		Timestamp:       timestamp,
 		SourceVersion:   d.Version,
 		OfficialVersion: officialVer,
-		PkgName:         OPGG,
+		PkgName:         PkgName,
 	})
-	_ = ioutil.WriteFile("output/"+OPGG+"/package.json", []byte(pkg), 0644)
+	_ = ioutil.WriteFile("output/"+PkgName+"/package.json", []byte(pkg), 0644)
 
 	duration := time.Since(start)
 	return fmt.Sprintf("🟢 [OP.GG] All finished, success: %d, failed: %d, took %s", cnt-failed, failed, duration)

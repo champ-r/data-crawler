@@ -37,9 +37,9 @@ func main() {
 		go func() {
 			ch <- op.Import(allChampionData.Data, championAliasList, officialVer, timestamp, *debugFlag)
 		}()
-		//go func() {
-		//	ch <- ImportOPGG(allChampionData.Data, championAliasList, officialVer, timestamp, *debugFlag, true)
-		//}()
+		go func() {
+			ch <- op.ImportAram(allChampionData.Data, championAliasList, officialVer, timestamp, *debugFlag, true)
+		}()
 	}
 
 	if *mbFlag {

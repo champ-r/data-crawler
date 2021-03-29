@@ -7,8 +7,12 @@ import (
 	"strings"
 )
 
-func genOverview(allChampions map[string]common.ChampionItem, aliasList map[string]string) (*OverviewData, int) {
-	doc, err := common.ParseHTML(OPGGUrl + `/statistics`)
+func genOverview(allChampions map[string]common.ChampionItem, aliasList map[string]string, aram bool) (*OverviewData, int) {
+	url := SourceUrl
+	if aram {
+		url = AramSourceUrl
+	}
+	doc, err := common.ParseHTML(url + `/statistics`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,21 +27,24 @@ func genOverview(allChampions map[string]common.ChampionItem, aliasList map[stri
 	doc.Find(`.champion-index__champion-list .champion-index__champion-item`).Each(func(i int, s *goquery.Selection) {
 		name := s.Find(".champion-index__champion-item__name").Text()
 		alias := aliasList[name]
-		var positions []string
-		s.Find(".champion-index__champion-item__position > span").Each(func(i int, selection *goquery.Selection) {
-			position := strings.ToLower(selection.Text())
-			positions = append(positions, position)
-		})
-		if len(positions) > 0 {
-			c := ChampionListItem{Alias: alias, Name: name, Id: allChampions[alias].Key}
-			c.Positions = positions
-			d.ChampionList = append(d.ChampionList, c)
-			count += len(positions)
+		if aram {
+			count += 1
 		} else {
-			d.Unavailable = append(d.Unavailable, alias)
+			var positions []string
+			s.Find(".champion-index__champion-item__position > span").Each(func(i int, selection *goquery.Selection) {
+				position := strings.ToLower(selection.Text())
+				positions = append(positions, position)
+			})
+			if len(positions) > 0 {
+				c := ChampionListItem{Alias: alias, Name: name, Id: allChampions[alias].Key}
+				c.Positions = positions
+				d.ChampionList = append(d.ChampionList, c)
+				count += len(positions)
+			} else {
+				d.Unavailable = append(d.Unavailable, alias)
+			}
 		}
 	})
 
 	return &d, count
 }
-

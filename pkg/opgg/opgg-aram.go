@@ -15,11 +15,8 @@ import (
 	"time"
 )
 
-const pkgName = `op.gg-aram`
-const OpggUrl = `https://www.op.gg/champion`
-
 func genData(alias string, id int, version string) (*common.ChampionDataItem, error) {
-	url := OpggUrl + "/" + alias + "/statistics"
+	url := AramSourceUrl + "/" + alias + "/statistics"
 
 	doc, err := common.ParseHTML(url)
 	if err != nil {
@@ -195,7 +192,7 @@ func startJob(champ ChampionListItem, position string, index int, version string
 	time.Sleep(time.Second * 1)
 
 	alias := champ.Alias
-	// fmt.Printf("⌛ [OP.GG]️️ No.%d, %s @ %s\n", index, alias, position)
+	// fmt.Printf("⌛ [OP.GG-ARAM]️️ No.%d, %s @ %s\n", index, alias, position)
 
 	id, _ := strconv.Atoi(champ.Id)
 	d, _ := genData(alias, id, version)
@@ -205,16 +202,16 @@ func startJob(champ ChampionListItem, position string, index int, version string
 		d.Name = champ.Name
 	}
 
-	fmt.Printf("🌟 [OP.GG] No.%d, %s @ %s\n", index, alias, position)
+	fmt.Printf("🌟 [OP.GG-ARAM] No.%d, %s @ %s\n", index, alias, position)
 	return d
 }
 
 func ImportAram(allChampions map[string]common.ChampionItem, aliasList map[string]string, officialVer string, timestamp int64, debug bool, aram bool) string {
 	start := time.Now()
-	fmt.Println("🤖 [OP.GG] Start...")
+	fmt.Println("🤖 [OP.GG-ARAM] Start...")
 
-	d, count := genOverview(allChampions, aliasList)
-	fmt.Printf("🤪 [OP.GG] Got champions & positions, count: %d \n", count)
+	d, count := genOverview(allChampions, aliasList, true)
+	fmt.Printf("🤪 [OP.GG-ARAM] Got champions & positions, count: %d \n", count)
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
@@ -244,7 +241,7 @@ func ImportAram(allChampions map[string]common.ChampionItem, aliasList map[strin
 	wg.Wait()
 	close(ch)
 
-	outputPath := filepath.Join(".", "output", pkgName)
+	outputPath := filepath.Join(".", "output", AramPkgName)
 	_ = os.MkdirAll(outputPath, os.ModePerm)
 
 	failed := 0
@@ -270,10 +267,10 @@ func ImportAram(allChampions map[string]common.ChampionItem, aliasList map[strin
 		Timestamp:       timestamp,
 		SourceVersion:   d.Version,
 		OfficialVersion: officialVer,
-		PkgName:         pkgName,
+		PkgName:         AramPkgName,
 	})
-	_ = ioutil.WriteFile("output/"+pkgName+"/package.json", []byte(pkg), 0644)
+	_ = ioutil.WriteFile("output/"+AramPkgName+"/package.json", []byte(pkg), 0644)
 
 	duration := time.Since(start)
-	return fmt.Sprintf("🟢 [OP.GG] All finished, success: %d, failed: %d, took %s", cnt-failed, failed, duration)
+	return fmt.Sprintf("🟢 [OP.GG-ARAM] All finished, success: %d, failed: %d, took %s", cnt-failed, failed, duration)
 }
