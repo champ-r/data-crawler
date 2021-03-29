@@ -22,7 +22,7 @@ jobs:
 
       - name: Build & run
         run: |
-          go build -v ./...
+          go build -v .
           ./data-crawler -mb -opgg
 
       - uses: actions/upload-artifact@v2
@@ -30,4 +30,5 @@ jobs:
           name: packages
           path: |
             output/op.gg
+            output/op.gg-aram
             output/murderbridge
