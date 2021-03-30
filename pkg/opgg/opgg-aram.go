@@ -110,20 +110,7 @@ func genData(alias string, id int, version string) (*common.ChampionDataItem, er
 			id := common.MatchId(src)
 			itemIds = common.NoRepeatPush(id, itemIds)
 		})
-
-		// starter items
-		if blockIdx == 0 {
-			// wards
-			for _, id := range common.WardItems {
-				itemIds = common.NoRepeatPush(id, itemIds)
-			}
-
-			// trinkets
-			for _, id := range common.TrinketItems {
-				itemIds = common.NoRepeatPush(id, itemIds)
-			}
-		}
-
+		
 		for _, val := range itemIds {
 			item := common.BlockItem{
 				Id:    val,
