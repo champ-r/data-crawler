@@ -1,6 +1,8 @@
 package main
 
 import (
+	"data-crawler/pkg/common"
+	op "data-crawler/pkg/opgg"
 	"flag"
 	"fmt"
 	"log"
@@ -17,7 +19,7 @@ func main() {
 	fmt.Println(os.Args)
 
 	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
-	allChampionData, officialVer, err := GetChampionList()
+	allChampionData, officialVer, err := common.GetChampionList()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,12 +30,15 @@ func main() {
 	}
 
 	ch := make(chan string)
-	var opgg, mb string
+	var opggRet, mbRet, opggAramRet string
 
 	if *opggFlag {
 		fmt.Println("[CMD] Fetch data from op.gg")
 		go func() {
-			ch <- ImportOPGG(allChampionData.Data, championAliasList, officialVer, timestamp, *debugFlag)
+			ch <- op.Import(allChampionData.Data, championAliasList, officialVer, timestamp, *debugFlag)
+		}()
+		go func() {
+			ch <- op.ImportAram(allChampionData.Data, championAliasList, officialVer, timestamp, *debugFlag)
 		}()
 	}
 
@@ -44,12 +49,14 @@ func main() {
 		}()
 	}
 
-	opgg = <- ch
-	mb = <- ch
-	if opgg != "" {
-		fmt.Println(opgg)
+	opggRet = <- ch
+	opggAramRet = <- ch
+	mbRet = <- ch
+	if opggRet != "" {
+		fmt.Println(opggRet)
+		fmt.Println(opggAramRet)
 	}
-	if mb != "" {
-		fmt.Println(mb)
+	if mbRet != "" {
+		fmt.Println(mbRet)
 	}
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"data-crawler/pkg/common"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -52,10 +53,10 @@ type ScoreItem struct {
 }
 
 type SubPerkItem struct {
-	Rune0 RespRuneItem `json:"perk0"`
-	Rune1 RespRuneItem `json:"perk1"`
-	Score float64      `json:"score"`
-	Style int          `json:"style"`
+	Rune0 common.RespRuneItem `json:"perk0"`
+	Rune1 common.RespRuneItem `json:"perk1"`
+	Score float64             `json:"score"`
+	Style int                 `json:"style"`
 }
 
 type OptimalSubPerk struct {
@@ -81,13 +82,13 @@ const generalMean = 2.5
 const generalRatio = float64(50)
 const spread = 100 - generalRatio
 
-var items *map[string]BuildItem
-var runeLoopUp map[int]*RespRuneItem
-var allRunes *[]RuneSlot
+var items *map[string]common.BuildItem
+var runeLoopUp map[int]*common.RespRuneItem
+var allRunes *[]common.RuneSlot
 
 func getLatestVersion() (string, error) {
 	url := MurderBridgeBUrl + `/save/general.json`
-	body, err := MakeRequest(url)
+	body, err := common.MakeRequest(url)
 	if err != nil {
 		return "", err
 	}
@@ -137,7 +138,7 @@ func getItemList(data map[string]StatItem, limit int) []ScoreItem {
 	return keyScoreMap[0:limit]
 }
 
-func makeBlocks(data ChampionDataResp) []ItemBuildBlockItem {
+func makeBlocks(data ChampionDataResp) []common.ItemBuildBlockItem {
 	starting := getItemList(data.Items.Starting, 3)
 	builds := getItemList(data.Items.Build, 13)
 
@@ -149,33 +150,33 @@ func makeBlocks(data ChampionDataResp) []ItemBuildBlockItem {
 		var itemSet [][2]int
 		_ = json.Unmarshal([]byte(v.RawItem), &itemSet)
 		for _, j := range itemSet {
-			startingItems = NoRepeatPush(strconv.Itoa(j[0]), startingItems)
+			startingItems = common.NoRepeatPush(strconv.Itoa(j[0]), startingItems)
 		}
 	}
 	// wards
-	for _, id := range WardItems {
-		startingItems = NoRepeatPush(id, startingItems)
+	for _, id := range common.WardItems {
+		startingItems = common.NoRepeatPush(id, startingItems)
 	}
 	// trinkets
-	for _, id := range TrinketItems {
-		startingItems = NoRepeatPush(id, startingItems)
+	for _, id := range common.TrinketItems {
+		startingItems = common.NoRepeatPush(id, startingItems)
 	}
 
 	for _, v := range builds {
-		if IsBoot(v.RawItem, *items) {
+		if common.IsBoot(v.RawItem, *items) {
 			bootIds = append(bootIds, v.RawItem)
 			continue
 		}
 
-		buildItems = NoRepeatPush(v.RawItem, buildItems)
+		buildItems = common.NoRepeatPush(v.RawItem, buildItems)
 	}
 
-	startingBlocks := MakeBuildBlock(startingItems, `Starter Items`)
-	buildBlocks := MakeBuildBlock(buildItems, `Recommended Builds`)
-	bootBlocks := MakeBuildBlock(bootIds, `Boots`)
-	consumableItems := MakeBuildBlock(ConsumableItems, `Consumable Items`)
+	startingBlocks := common.MakeBuildBlock(startingItems, `Starter Items`)
+	buildBlocks := common.MakeBuildBlock(buildItems, `Recommended Builds`)
+	bootBlocks := common.MakeBuildBlock(bootIds, `Boots`)
+	consumableItems := common.MakeBuildBlock(common.ConsumableItems, `Consumable Items`)
 
-	items := []ItemBuildBlockItem{
+	items := []common.ItemBuildBlockItem{
 		startingBlocks,
 		buildBlocks,
 		bootBlocks,
@@ -188,7 +189,7 @@ func generateOptimalSubPerks(runes map[string]StatItem) []SubPerkItem {
 	var optimalSubPerks []SubPerkItem
 
 	for _, i := range *allRunes {
-		var targetRunes []*RespRuneItem
+		var targetRunes []*common.RespRuneItem
 		for _, r := range runeLoopUp {
 			if r.Style == i.Id && r.Slot != 0 {
 				targetRunes = append(targetRunes, r)
@@ -232,7 +233,7 @@ func generateOptimalPerks(runes map[string]StatItem) []PerkStyleItem {
 	scoreMap := make(map[int]float64)
 
 	var fragments []int
-	for _, ids := range Fragments {
+	for _, ids := range common.Fragments {
 		sort.Slice(ids, func(i, j int) bool {
 			iid := strconv.Itoa(ids[i])
 			jid := strconv.Itoa(ids[j])
@@ -321,14 +322,14 @@ func generateOptimalPerks(runes map[string]StatItem) []PerkStyleItem {
 	return result
 }
 
-func genChampionData(champion ChampionItem, version string, timestamp int64) (*ChampionDataItem, error) {
+func genChampionData(champion common.ChampionItem, version string, timestamp int64) (*common.ChampionDataItem, error) {
 	url := MurderBridgeBUrl + `/save/` + version + `/ARAM/` + champion.Id + `.json`
-	body, err := MakeRequest(url)
+	body, err := common.MakeRequest(url)
 	if err != nil {
 		return nil, err
 	}
 
-	result := ChampionDataItem{
+	result := common.ChampionDataItem{
 		Id:        champion.Id,
 		Version:   version,
 		Alias:     champion.Id,
@@ -339,7 +340,7 @@ func genChampionData(champion ChampionItem, version string, timestamp int64) (*C
 	_ = json.Unmarshal(body, &data)
 	key, _ := strconv.Atoi(champion.Key)
 
-	build := ItemBuild{
+	build := common.ItemBuild{
 		Title:               `[MB] ` + champion.Id + ` ` + version,
 		AssociatedMaps:      []int{12},
 		AssociatedChampions: []int{key},
@@ -355,7 +356,7 @@ func genChampionData(champion ChampionItem, version string, timestamp int64) (*C
 
 	optimalRunes := generateOptimalPerks(data.Runes)
 	for _, r := range optimalRunes {
-		item := RuneItem{
+		item := common.RuneItem{
 			Alias:          champion.Id,
 			Name:           `[MB] ` + champion.Name,
 			Position:       ``,
@@ -379,17 +380,17 @@ func genChampionData(champion ChampionItem, version string, timestamp int64) (*C
 	return &result, nil
 }
 
-func ImportMB(championAliasList map[string]ChampionItem, timestamp int64) string {
+func ImportMB(championAliasList map[string]common.ChampionItem, timestamp int64) string {
 	start := time.Now()
 	fmt.Println("🌉 [MB]: Start...")
 
 	ver, _ := getLatestVersion()
-	items, _ = GetItemList(ver)
-	runeLoopUp, allRunes, _ = GetRunesReforged(ver)
+	items, _ = common.GetItemList(ver)
+	runeLoopUp, allRunes, _ = common.GetRunesReforged(ver)
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
-	ch := make(chan ChampionDataItem, len(championAliasList))
+	ch := make(chan common.ChampionDataItem, len(championAliasList))
 	for _, champion := range championAliasList {
 		//if cnt > 3 {
 		//	break
@@ -401,7 +402,7 @@ func ImportMB(championAliasList map[string]ChampionItem, timestamp int64) string
 
 		cnt += 1
 		wg.Add(1)
-		go func(_champion ChampionItem, _ver string, _cnt int, _timestamp int64) {
+		go func(_champion common.ChampionItem, _ver string, _cnt int, _timestamp int64) {
 			d, err := genChampionData(_champion, _ver, timestamp)
 			if d != nil {
 				ch <- *d
@@ -419,10 +420,10 @@ func ImportMB(championAliasList map[string]ChampionItem, timestamp int64) string
 
 	for data := range ch {
 		fileName := outputPath + "/" + data.Alias + ".json"
-		content := []ChampionDataItem{data}
-		_ = SaveJSON(fileName, content)
+		content := []common.ChampionDataItem{data}
+		_ = common.SaveJSON(fileName, content)
 	}
-	pkg, _ := GenPkgInfo("tpl/package.json", PkgInfo{
+	pkg, _ := common.GenPkgInfo("tpl/package.json", common.PkgInfo{
 		Timestamp:       timestamp,
 		SourceVersion:   ver,
 		OfficialVersion: ver,
