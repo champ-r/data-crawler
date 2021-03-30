@@ -17,17 +17,18 @@ func genOverview(allChampions map[string]common.ChampionItem, aliasList map[stri
 		log.Fatal(err)
 	}
 
-	verInfo := doc.Find(".champion-index__version").Text()
-	verArr := strings.Split(strings.Trim(verInfo, " \n"), ` : `)
 	d := OverviewData{
-		Version: verArr[len(verArr)-1],
+		Version: "latest",
 	}
 
 	count := 0
 	doc.Find(`.champion-index__champion-list .champion-index__champion-item`).Each(func(i int, s *goquery.Selection) {
 		name := s.Find(".champion-index__champion-item__name").Text()
 		alias := aliasList[name]
+
 		if aram {
+			c := ChampionListItem{Alias: alias, Name: name, Id: allChampions[alias].Key}
+			d.ChampionList = append(d.ChampionList, c)
 			count += 1
 		} else {
 			var positions []string

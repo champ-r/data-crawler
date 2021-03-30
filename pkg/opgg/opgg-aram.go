@@ -24,7 +24,7 @@ func genData(alias string, id int, version string) (*common.ChampionDataItem, er
 	}
 
 	d := common.ChampionDataItem{
-		Alias:    alias,
+		Alias: alias,
 	}
 
 	doc.Find(`.champion-overview__table--summonerspell > tbody:last-child .champion-stats__list .champion-stats__list__item span`).Each(func(_ int, selection *goquery.Selection) {
@@ -42,7 +42,7 @@ func genData(alias string, id int, version string) (*common.ChampionDataItem, er
 
 	build := common.ItemBuild{
 		Title:               "[OP.GG-ARAM] " + alias + " " + version,
-		AssociatedMaps:      []int{11, 12},
+		AssociatedMaps:      []int{12},
 		AssociatedChampions: []int{id},
 		Map:                 "any",
 		Mode:                "any",
@@ -67,7 +67,7 @@ func genData(alias string, id int, version string) (*common.ChampionDataItem, er
 				src, _ := img.Attr("src")
 				id := common.MatchId(src)
 				firstBlock.Items = append(firstBlock.Items, common.BlockItem{
-					Id: id,
+					Id:    id,
 					Count: 1,
 				})
 			})
@@ -85,7 +85,7 @@ func genData(alias string, id int, version string) (*common.ChampionDataItem, er
 					src, _ := img.Attr("src")
 					id := common.MatchId(src)
 					block.Items = append(block.Items, common.BlockItem{
-						Id: id,
+						Id:    id,
 						Count: 1,
 					})
 				})
@@ -188,7 +188,7 @@ func genData(alias string, id int, version string) (*common.ChampionDataItem, er
 	return &d, nil
 }
 
-func startJob(champ ChampionListItem, position string, index int, version string) *common.ChampionDataItem {
+func startJob(champ ChampionListItem, index int, version string) *common.ChampionDataItem {
 	time.Sleep(time.Second * 1)
 
 	alias := champ.Alias
@@ -202,11 +202,11 @@ func startJob(champ ChampionListItem, position string, index int, version string
 		d.Name = champ.Name
 	}
 
-	fmt.Printf("🌟 [OP.GG-ARAM] No.%d, %s @ %s\n", index, alias, position)
+	fmt.Printf("🌟 [OP.GG-ARAM] No.%d, %s \n", index, alias)
 	return d
 }
 
-func ImportAram(allChampions map[string]common.ChampionItem, aliasList map[string]string, officialVer string, timestamp int64, debug bool, aram bool) string {
+func ImportAram(allChampions map[string]common.ChampionItem, aliasList map[string]string, officialVer string, timestamp int64, debug bool) string {
 	start := time.Now()
 	fmt.Println("🤖 [OP.GG-ARAM] Start...")
 
@@ -217,25 +217,23 @@ func ImportAram(allChampions map[string]common.ChampionItem, aliasList map[strin
 	cnt := 0
 	ch := make(chan common.ChampionDataItem, count)
 
-	listLoop:
+listLoop:
 	for _, cur := range d.ChampionList {
-		for _, p := range cur.Positions {
-			cnt += 1
+		cnt += 1
 
-			if cnt%7 == 0 {
-				if debug {
-					wg.Done()
-					break listLoop
-				}
-				time.Sleep(time.Second * 5)
-			}
-
-			wg.Add(1)
-			go func(_cur ChampionListItem, _p string, _cnt int, _ver string) {
-				ch <- *startJob(_cur, _p, _cnt, _ver)
+		if cnt%7 == 0 {
+			if debug {
 				wg.Done()
-			}(cur, p, cnt, officialVer)
+				break listLoop
+			}
+			time.Sleep(time.Second * 5)
 		}
+
+		wg.Add(1)
+		go func(_cur ChampionListItem, _cnt int, _ver string) {
+			ch <- *startJob(_cur, _cnt, _ver)
+			wg.Done()
+		}(cur, cnt, officialVer)
 	}
 
 	wg.Wait()
