@@ -20,6 +20,11 @@ func genOverview(allChampions map[string]common.ChampionItem, aliasList map[stri
 	d := OverviewData{
 		Version: "latest",
 	}
+	if aram {
+		verInfo := doc.Find(".champion-index__version").Text()
+		verArr := strings.Split(strings.Trim(verInfo, " \n"), ` : `)
+		d.Version = verArr[len(verArr)-1]
+	}
 
 	count := 0
 	doc.Find(`.champion-index__champion-list .champion-index__champion-item`).Each(func(i int, s *goquery.Selection) {
