@@ -20,7 +20,7 @@ func genOverview(allChampions map[string]common.ChampionItem, aliasList map[stri
 	d := OverviewData{
 		Version: "latest",
 	}
-	if aram {
+	if !aram {
 		verInfo := doc.Find(".champion-index__version").Text()
 		verArr := strings.Split(strings.Trim(verInfo, " \n"), ` : `)
 		d.Version = verArr[len(verArr)-1]
