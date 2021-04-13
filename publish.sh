@@ -6,6 +6,7 @@ npm=$(command -v npm)
 
 ./data-crawler $args
 cp output/index.json output/op.gg/
+cp output/index.json output/op.gg-aram/
 cp output/index.json output/murderbridge/
 
 cd output/op.gg
