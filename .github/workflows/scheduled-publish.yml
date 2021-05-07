@@ -12,7 +12,7 @@ jobs:
 
       - name: Checkout to latest tag
         run: |
-          $latestTag=$(git describe --tags --abbrev=0)
+          latestTag=$(git describe --tags --abbrev=0)
           git checkout tags/$latestTag
           echo "current version: $latestTag"
 
