@@ -8,7 +8,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout to latest tag
+        uses: actions/checkout@v2
+        run: |
+          $latestTag=$(git describe --tags --abbrev=0)
+          git checkout tags/$latestTag
+          echo "current version: $latestTag"
 
       - name: Set up Go
         uses: actions/setup-go@v2
