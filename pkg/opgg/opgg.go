@@ -74,7 +74,7 @@ func genPositionData(alias string, position string, id int, version string) (*co
 				src, _ := img.Attr("src")
 				id := common.MatchId(src)
 				firstBlock.Items = append(firstBlock.Items, common.BlockItem{
-					Id: id,
+					Id:    id,
 					Count: 1,
 				})
 			})
@@ -92,7 +92,7 @@ func genPositionData(alias string, position string, id int, version string) (*co
 					src, _ := img.Attr("src")
 					id := common.MatchId(src)
 					block.Items = append(block.Items, common.BlockItem{
-						Id: id,
+						Id:    id,
 						Count: 1,
 					})
 				})

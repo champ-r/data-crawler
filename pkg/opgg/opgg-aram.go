@@ -110,7 +110,7 @@ func genData(alias string, id int, version string) (*common.ChampionDataItem, er
 			id := common.MatchId(src)
 			itemIds = common.NoRepeatPush(id, itemIds)
 		})
-		
+
 		for _, val := range itemIds {
 			item := common.BlockItem{
 				Id:    val,
