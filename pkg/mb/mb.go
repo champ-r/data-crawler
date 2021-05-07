@@ -1,4 +1,4 @@
-package main
+package murderbridge
 
 import (
 	"data-crawler/pkg/common"

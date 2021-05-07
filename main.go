@@ -2,6 +2,7 @@ package main
 
 import (
 	"data-crawler/pkg/common"
+	mb "data-crawler/pkg/mb"
 	op "data-crawler/pkg/opgg"
 	"flag"
 	"fmt"
@@ -45,13 +46,13 @@ func main() {
 	if *mbFlag {
 		fmt.Println("[CMD] Fetch data from murderbridge.com")
 		go func() {
-			ch <- ImportMB(allChampionData.Data, timestamp)
+			ch <- mb.ImportMB(allChampionData.Data, timestamp)
 		}()
 	}
 
-	opggRet = <- ch
-	opggAramRet = <- ch
-	mbRet = <- ch
+	opggRet = <-ch
+	opggAramRet = <-ch
+	mbRet = <-ch
 	if opggRet != "" {
 		fmt.Println(opggRet)
 		fmt.Println(opggAramRet)
