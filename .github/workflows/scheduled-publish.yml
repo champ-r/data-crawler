@@ -1,6 +1,9 @@
 name: Scheduled publish
 
 on:
+  push:
+    branches:
+      - master
   schedule:
     - cron: '0 */6 * * *'
 
@@ -12,6 +15,7 @@ jobs:
 
       - name: Checkout to latest tag
         run: |
+          git fetch --prune --unshallow
           latestTag=$(git describe --tags --abbrev=0)
           git checkout tags/$latestTag
           echo "current version: $latestTag"
