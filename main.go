@@ -2,6 +2,7 @@ package main
 
 import (
 	"data-crawler/pkg/common"
+	la "data-crawler/pkg/lolalytics"
 	mb "data-crawler/pkg/murderbridge"
 	op "data-crawler/pkg/opgg"
 	"flag"
@@ -12,9 +13,10 @@ import (
 )
 
 func main() {
+	debugFlag := flag.Bool("debug", false, "only for debug")
 	opggFlag := flag.Bool("opgg", false, "Fetch & generate data from op.gg")
 	mbFlag := flag.Bool("mb", false, "Fetch & generate murderbridge.com")
-	debugFlag := flag.Bool("debug", false, "only for debug")
+	laFlag := flag.Bool("la", false, "Fetch & generate lolalytics.com")
 
 	flag.Parse()
 	fmt.Println(os.Args)
@@ -31,7 +33,7 @@ func main() {
 	}
 
 	ch := make(chan string)
-	var opggRet, mbRet, opggAramRet string
+	var opggRet, mbRet, opggAramRet, laRet string
 
 	if *opggFlag {
 		fmt.Println("[CMD] Fetch data from op.gg")
@@ -50,14 +52,25 @@ func main() {
 		}()
 	}
 
+	if *laFlag {
+		fmt.Println("[CMD] Fetch data from lolalytics.com")
+		go func() {
+			ch <- la.Import(allChampionData.Data, timestamp)
+		}()
+	}
+
 	opggRet = <-ch
 	opggAramRet = <-ch
 	mbRet = <-ch
+	laRet = <-ch
 	if opggRet != "" {
 		fmt.Println(opggRet)
 		fmt.Println(opggAramRet)
 	}
 	if mbRet != "" {
 		fmt.Println(mbRet)
+	}
+	if laRet != "" {
+		fmt.Println(laRet)
 	}
 }
