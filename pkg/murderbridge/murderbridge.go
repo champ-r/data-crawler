@@ -380,7 +380,7 @@ func genChampionData(champion common.ChampionItem, version string, timestamp int
 	return &result, nil
 }
 
-func ImportMB(championAliasList map[string]common.ChampionItem, timestamp int64) string {
+func Import(championAliasList map[string]common.ChampionItem, timestamp int64) string {
 	start := time.Now()
 	fmt.Println("🌉 [MB]: Start...")
 

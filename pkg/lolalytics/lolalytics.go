@@ -1,0 +1,5 @@
+package lolalytics
+
+func Import() {
+
+}
