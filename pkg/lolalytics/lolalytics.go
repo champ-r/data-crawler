@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sync"
+	"time"
 )
 
 var cidReg = regexp.MustCompile("&cid=\\d+?&")
@@ -41,6 +43,20 @@ func getTierList(q string) (ITierList, error) {
 	return data, nil
 }
 
+func getChampionById(id string, championAliasList map[string]common.ChampionItem) common.ChampionItem {
+	var ret common.ChampionItem
+	for _, champ := range championAliasList {
+		if id != champ.Key {
+			continue
+		}
+
+		ret = champ
+		break
+	}
+
+	return ret
+}
+
 func Import(championAliasList map[string]common.ChampionItem, timestamp int64) string {
 	// get initial patch version/ep etc.
 	body, err := common.MakeRequest("https://lolalytics.com/lol/rengar/build/")
@@ -66,5 +82,23 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64) s
 	}
 
 	fmt.Println(cIds, sourceVersion)
+
+	wg := new(sync.WaitGroup)
+	cnt := 0
+
+	for _, cid := range cIds {
+		if cnt > 0 && cnt%7 == 0 {
+			fmt.Println(`🌉 Take a break...`)
+			time.Sleep(time.Second * 5)
+		}
+
+		cnt += 1
+		wg.Add(1)
+
+		champion := getChampionById(cid, championAliasList)
+		fmt.Println(champion)
+		//go func() {}()
+	}
+
 	return fmt.Sprintf("🟢 [lolalytics.com] Finished. Took some time.")
 }
