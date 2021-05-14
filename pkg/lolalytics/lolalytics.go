@@ -10,7 +10,7 @@ import (
 var cidReg = regexp.MustCompile("&cid=\\d+?&")
 var laneReg = regexp.MustCompile("&lane=[a-zA-Z]+?&")
 var epReg = regexp.MustCompile("ep=.*?region=all")
-var patchReg = regexp.MustCompile("&patch=((\\d+\\.)+\\d?)&")
+var patchReg = regexp.MustCompile("&patch=((\\d+\\.)+\\d+?)&")
 
 const ApiUrl = "https://apix1.op.lol"
 
