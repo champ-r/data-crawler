@@ -85,6 +85,7 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64) s
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
+	ch := make(chan IChampionData)
 
 	for _, cid := range cIds {
 		if cnt > 0 && cnt%7 == 0 {
@@ -96,8 +97,21 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64) s
 		wg.Add(1)
 
 		champion := getChampionById(cid, championAliasList)
-		fmt.Println(champion)
-		//go func() {}()
+		query := queryMaker(cid, "default")
+
+		go func(champion common.ChampionItem, query string) {
+			var data IChampionData
+			body, err := common.MakeRequest(ApiUrl + "/mega/?" + query)
+			if err != nil {
+				ch <- data
+			} else {
+				_ = json.Unmarshal(body, &data)
+				fmt.Println(data)
+				ch <- data
+			}
+
+			wg.Done()
+		}(champion, query)
 	}
 
 	return fmt.Sprintf("🟢 [lolalytics.com] Finished. Took some time.")
