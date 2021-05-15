@@ -4,6 +4,12 @@ type ITierList struct {
 	Cid map[string]interface{} `json:"cid"`
 }
 
+type IItemN struct {
+	ID int     `json:"id"`
+	N  float64 `json:"n"`
+	Wr float64 `json:"wr"`
+}
+
 type IItems struct {
 	Start struct {
 		N   float64 `json:"n"`
@@ -15,21 +21,9 @@ type IItems struct {
 		Wr  float64 `json:"wr"`
 		N   float64 `json:"n"`
 	} `json:"core"`
-	Item4 []struct {
-		ID int     `json:"id"`
-		N  float64 `json:"n"`
-		Wr float64 `json:"wr"`
-	} `json:"item4"`
-	Item5 []struct {
-		ID int     `json:"id"`
-		N  float64 `json:"n"`
-		Wr float64 `json:"wr"`
-	} `json:"item5"`
-	Item6 []struct {
-		ID int     `json:"id"`
-		N  float64 `json:"n"`
-		Wr float64 `json:"wr"`
-	} `json:"item6"`
+	Item4 []IItemN `json:"item4"`
+	Item5 []IItemN `json:"item5"`
+	Item6 []IItemN `json:"item6"`
 }
 
 type IGraphDataItem struct {
