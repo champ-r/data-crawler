@@ -43,6 +43,11 @@ func main() {
 		go func() {
 			ch <- op.ImportAram(allChampionData.Data, championAliasList, officialVer, timestamp, *debugFlag)
 		}()
+
+		opggRet = <-ch
+		opggAramRet = <-ch
+		fmt.Println(opggRet)
+		fmt.Println(opggAramRet)
 	}
 
 	if *mbFlag {
@@ -50,27 +55,18 @@ func main() {
 		go func() {
 			ch <- mb.Import(allChampionData.Data, timestamp)
 		}()
+
+		mbRet = <-ch
+		fmt.Println(mbRet)
 	}
 
 	if *laFlag {
 		fmt.Println("[CMD] Fetch data from lolalytics.com")
 		go func() {
-			ch <- la.Import(allChampionData.Data, timestamp)
+			ch <- la.Import(allChampionData.Data, timestamp, *debugFlag)
 		}()
-	}
 
-	opggRet = <-ch
-	opggAramRet = <-ch
-	mbRet = <-ch
-	laRet = <-ch
-	if opggRet != "" {
-		fmt.Println(opggRet)
-		fmt.Println(opggAramRet)
-	}
-	if mbRet != "" {
-		fmt.Println(mbRet)
-	}
-	if laRet != "" {
+		laRet = <-ch
 		fmt.Println(laRet)
 	}
 }

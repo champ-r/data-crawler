@@ -105,7 +105,7 @@ func makeBuildFromSet(data IItems, build common.ItemBuild) {
 	build.Blocks = append(build.Blocks, item6Block)
 }
 
-func Import(championAliasList map[string]common.ChampionItem, timestamp int64) string {
+func Import(championAliasList map[string]common.ChampionItem, timestamp int64, debug bool) string {
 	start := time.Now()
 	fmt.Println("🌉 [lolalytics]: Start...")
 
@@ -132,13 +132,15 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64) s
 		cIds = append(cIds, key)
 	}
 
-	fmt.Println(cIds, sourceVersion)
-
 	wg := new(sync.WaitGroup)
 	cnt := 0
-	ch := make(chan common.ChampionDataItem)
+	ch := make(chan common.ChampionDataItem, len(cIds) * 3)
 
 	for _, cid := range cIds {
+		if debug && cnt == 7 {
+			break
+		}
+
 		if cnt > 0 && cnt%7 == 0 {
 			fmt.Println(`🌉 Take a break...`)
 			time.Sleep(time.Second * 5)
@@ -150,12 +152,12 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64) s
 		champion := getChampionById(cid, championAliasList)
 		query := queryMaker(cid, "default")
 
-		go func(champion common.ChampionItem, query string) {
+		go func(champion common.ChampionItem, query string, cnt int) {
 			var resp IChampionData
 			var ret common.ChampionDataItem
 			body, err := common.MakeRequest(ApiUrl + "/mega/?" + query)
 			if err != nil {
-				ch <- ret
+				fmt.Println("[lolalytics] Fetch champion data failed.", champion.Id)
 			} else {
 				_ = json.Unmarshal(body, &resp)
 				ID, _ := strconv.Atoi(champion.Key)
@@ -171,7 +173,7 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64) s
 				}
 
 				highestWinBuild := common.ItemBuild{
-					Title:               "[lolalytics] highest win: " + champion.Name + "@" + resp.Header.Lane + " " + sourceVersion,
+					Title:               "[lolalytics](Gold+) Highest win: " + champion.Name + "@" + resp.Header.Lane + " " + sourceVersion,
 					AssociatedMaps:      []int{11, 12},
 					AssociatedChampions: []int{ID},
 					Map:                 "any",
@@ -186,7 +188,7 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64) s
 				ret.ItemBuilds = append(ret.ItemBuilds, highestWinBuild)
 
 				mostCommonBuild := common.ItemBuild{
-					Title:               "[lolalytics] most common: " + champion.Name + "@" + resp.Header.Lane + " " + sourceVersion,
+					Title:               "[lolalytics](Gold+) Most common: " + champion.Name + "@" + resp.Header.Lane + " " + sourceVersion,
 					AssociatedMaps:      []int{11, 12},
 					AssociatedChampions: []int{ID},
 					Map:                 "any",
@@ -200,11 +202,15 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64) s
 				ret.ItemBuilds = append(ret.ItemBuilds, mostCommonBuild)
 
 				ch <- ret
+				fmt.Printf("[lolalytics] Fetched: %s@%s \n", champion.Name, resp.Header.Lane)
 			}
 
-			wg.Done()
-		}(champion, query)
+			defer wg.Done()
+		}(champion, query, cnt)
 	}
+
+	wg.Wait()
+	close(ch)
 
 	duration := time.Since(start)
 
