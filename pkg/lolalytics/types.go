@@ -144,13 +144,7 @@ type IChampionData struct {
 		Br    IGraphDataItem `json:"br"`
 	} `json:"graph"`
 	Nav struct {
-		Lanes struct {
-			Top     float64 `json:"top"`
-			Jungle  float64 `json:"jungle"`
-			Middle  float64 `json:"middle"`
-			Bottom  float64 `json:"bottom"`
-			Support float64 `json:"support"`
-		} `json:"lanes"`
+		Lanes map[string]float64 `json:"lanes"`
 	} `json:"nav"`
 	Analysed   float64         `json:"analysed"`
 	AvgWinRate float64         `json:"avgWinRate"`

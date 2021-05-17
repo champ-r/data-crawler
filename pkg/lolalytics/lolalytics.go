@@ -119,9 +119,10 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	var resp IChampionData
 	_ = json.Unmarshal(body, &resp)
 	ID, _ := strconv.Atoi(champion.Key)
+	defaultLane := resp.Header.Lane
 
 	ret := &common.ChampionDataItem{
-		Position:  resp.Header.Lane,
+		Position:  defaultLane,
 		Index:     cnt,
 		Id:        champion.Key,
 		Version:   sourceVersion,
@@ -131,7 +132,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	}
 
 	highestWinBuild := common.ItemBuild{
-		Title:               "[lolalytics](Gold+) Highest win: " + champion.Name + "@" + resp.Header.Lane + " " + sourceVersion,
+		Title:               "[lolalytics](Gold+) Highest Win@" + defaultLane + ", " + champion.Name + " " + sourceVersion,
 		AssociatedMaps:      []int{11, 12},
 		AssociatedChampions: []int{ID},
 		Map:                 "any",
@@ -145,7 +146,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	ret.ItemBuilds = append(ret.ItemBuilds, highestWinBuild)
 
 	mostCommonBuild := common.ItemBuild{
-		Title:               "[lolalytics](Gold+) Most common: " + champion.Name + "@" + resp.Header.Lane + " " + sourceVersion,
+		Title:               "[lolalytics](Gold+) Most Common@" + defaultLane + ", " + champion.Name + " " + sourceVersion,
 		AssociatedMaps:      []int{11, 12},
 		AssociatedChampions: []int{ID},
 		Map:                 "any",
@@ -157,6 +158,14 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		Blocks:              makeBuildBlocksFromSet(resp.Summary.Items.Pick),
 	}
 	ret.ItemBuilds = append(ret.ItemBuilds, mostCommonBuild)
+
+	lanes := common.GetKeys(resp.Nav.Lanes)
+	var restLanes []string
+	for _, lane := range lanes {
+		if lane != defaultLane && resp.Nav.Lanes[lane] >= 2.5 {
+			restLanes = append(restLanes, lane)
+		}
+	}
 
 	fmt.Printf("[lolalytics] Fetched: %s@%s \n", champion.Name, resp.Header.Lane)
 	return ret, nil

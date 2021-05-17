@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -192,4 +193,13 @@ func GetRunesReforged(version string) (map[int]*RespRuneItem, *[]RuneSlot, error
 		}
 	}
 	return data, &resp, nil
+}
+
+func GetKeys(data interface{}) []string {
+	v := reflect.ValueOf(data)
+	keys := make([]string, v.NumField())
+	for i := 0; i < v.NumField(); i++ {
+		keys[i] = fmt.Sprintf("%v", v.Field(i).Interface())
+	}
+	return keys
 }
