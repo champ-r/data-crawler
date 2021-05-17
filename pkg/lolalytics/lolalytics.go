@@ -83,26 +83,29 @@ func extractItemIds(items []IItemN) []int {
 	return ids
 }
 
-func makeBuildFromSet(data IItems, build common.ItemBuild) {
-	startingTitle := "Starting items, win rate " + fmt.Sprintf("%f%", data.Start.Wr)
+func makeBuildBlocksFromSet(data IItems) []common.ItemBuildBlockItem {
+	var blocks []common.ItemBuildBlockItem
+	startingTitle := "Starting items, win rate " + fmt.Sprintf("%.2f%", data.Start.Wr)
 	startingBlock := makeBlock(startingTitle, data.Start.Set)
-	build.Blocks = append(build.Blocks, startingBlock)
+	blocks = append(blocks, startingBlock)
 
-	coreTitle := "Core items, win rate " + fmt.Sprintf("%f%", data.Core.Wr)
+	coreTitle := "Core items, win rate " + fmt.Sprintf("%.2f%", data.Core.Wr)
 	coreBlock := makeBlock(coreTitle, data.Core.Set)
-	build.Blocks = append(build.Blocks, coreBlock)
+	blocks = append(blocks, coreBlock)
 
 	item4Ids := extractItemIds(data.Item4)
 	item4Block := makeBlock("Item 4", item4Ids)
-	build.Blocks = append(build.Blocks, item4Block)
+	blocks = append(blocks, item4Block)
 
 	item5Ids := extractItemIds(data.Item5)
 	item5Block := makeBlock("Item 5", item5Ids)
-	build.Blocks = append(build.Blocks, item5Block)
+	blocks = append(blocks, item5Block)
 
 	item6Ids := extractItemIds(data.Item6)
 	item6Block := makeBlock("Item 6", item6Ids)
-	build.Blocks = append(build.Blocks, item6Block)
+	blocks = append(blocks, item6Block)
+
+	return blocks
 }
 
 func Import(championAliasList map[string]common.ChampionItem, timestamp int64, debug bool) string {
@@ -134,7 +137,7 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64, d
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
-	ch := make(chan common.ChampionDataItem, len(cIds) * 3)
+	ch := make(chan common.ChampionDataItem, len(cIds)*3)
 
 	for _, cid := range cIds {
 		if debug && cnt == 7 {
@@ -182,9 +185,8 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64, d
 					Sortrank:            1,
 					StartedFrom:         "blank",
 					Type:                "custom",
+					Blocks:              makeBuildBlocksFromSet(resp.Summary.Items.Win),
 				}
-
-				makeBuildFromSet(resp.Summary.Items.Win, highestWinBuild)
 				ret.ItemBuilds = append(ret.ItemBuilds, highestWinBuild)
 
 				mostCommonBuild := common.ItemBuild{
@@ -197,8 +199,8 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64, d
 					Sortrank:            1,
 					StartedFrom:         "blank",
 					Type:                "custom",
+					Blocks:              makeBuildBlocksFromSet(resp.Summary.Items.Pick),
 				}
-				makeBuildFromSet(resp.Summary.Items.Pick, mostCommonBuild)
 				ret.ItemBuilds = append(ret.ItemBuilds, mostCommonBuild)
 
 				ch <- ret
