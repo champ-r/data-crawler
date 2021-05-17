@@ -108,6 +108,60 @@ func makeBuildBlocksFromSet(data IItems) []common.ItemBuildBlockItem {
 	return blocks
 }
 
+func makeBuild(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int) (*common.ChampionDataItem, error) {
+	body, err := common.MakeRequest(ApiUrl + "/mega?" + query)
+
+	if err != nil {
+		fmt.Println("[lolalytics] Fetch champion data failed.", champion.Id)
+		return nil, err
+	}
+
+	var resp IChampionData
+	_ = json.Unmarshal(body, &resp)
+	ID, _ := strconv.Atoi(champion.Key)
+
+	ret := &common.ChampionDataItem{
+		Position:  resp.Header.Lane,
+		Index:     cnt,
+		Id:        champion.Key,
+		Version:   sourceVersion,
+		Timestamp: timestamp,
+		Alias:     champion.Id,
+		Name:      champion.Name,
+	}
+
+	highestWinBuild := common.ItemBuild{
+		Title:               "[lolalytics](Gold+) Highest win: " + champion.Name + "@" + resp.Header.Lane + " " + sourceVersion,
+		AssociatedMaps:      []int{11, 12},
+		AssociatedChampions: []int{ID},
+		Map:                 "any",
+		Mode:                "any",
+		PreferredItemSlots:  []string{},
+		Sortrank:            1,
+		StartedFrom:         "blank",
+		Type:                "custom",
+		Blocks:              makeBuildBlocksFromSet(resp.Summary.Items.Win),
+	}
+	ret.ItemBuilds = append(ret.ItemBuilds, highestWinBuild)
+
+	mostCommonBuild := common.ItemBuild{
+		Title:               "[lolalytics](Gold+) Most common: " + champion.Name + "@" + resp.Header.Lane + " " + sourceVersion,
+		AssociatedMaps:      []int{11, 12},
+		AssociatedChampions: []int{ID},
+		Map:                 "any",
+		Mode:                "any",
+		PreferredItemSlots:  []string{},
+		Sortrank:            1,
+		StartedFrom:         "blank",
+		Type:                "custom",
+		Blocks:              makeBuildBlocksFromSet(resp.Summary.Items.Pick),
+	}
+	ret.ItemBuilds = append(ret.ItemBuilds, mostCommonBuild)
+
+	fmt.Printf("[lolalytics] Fetched: %s@%s \n", champion.Name, resp.Header.Lane)
+	return ret, nil
+}
+
 func Import(championAliasList map[string]common.ChampionItem, timestamp int64, debug bool) string {
 	start := time.Now()
 	fmt.Println("🌉 [lolalytics]: Start...")
@@ -155,64 +209,22 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64, d
 		champion := getChampionById(cid, championAliasList)
 		query := queryMaker(cid, "default")
 
-		go func(champion common.ChampionItem, query string, cnt int) {
-			var resp IChampionData
-			var ret common.ChampionDataItem
-			body, err := common.MakeRequest(ApiUrl + "/mega/?" + query)
-			if err != nil {
-				fmt.Println("[lolalytics] Fetch champion data failed.", champion.Id)
-			} else {
-				_ = json.Unmarshal(body, &resp)
-				ID, _ := strconv.Atoi(champion.Key)
-
-				ret = common.ChampionDataItem{
-					Position:  resp.Header.Lane,
-					Index:     cnt,
-					Id:        champion.Key,
-					Version:   sourceVersion,
-					Timestamp: timestamp,
-					Alias:     champion.Id,
-					Name:      champion.Name,
-				}
-
-				highestWinBuild := common.ItemBuild{
-					Title:               "[lolalytics](Gold+) Highest win: " + champion.Name + "@" + resp.Header.Lane + " " + sourceVersion,
-					AssociatedMaps:      []int{11, 12},
-					AssociatedChampions: []int{ID},
-					Map:                 "any",
-					Mode:                "any",
-					PreferredItemSlots:  []string{},
-					Sortrank:            1,
-					StartedFrom:         "blank",
-					Type:                "custom",
-					Blocks:              makeBuildBlocksFromSet(resp.Summary.Items.Win),
-				}
-				ret.ItemBuilds = append(ret.ItemBuilds, highestWinBuild)
-
-				mostCommonBuild := common.ItemBuild{
-					Title:               "[lolalytics](Gold+) Most common: " + champion.Name + "@" + resp.Header.Lane + " " + sourceVersion,
-					AssociatedMaps:      []int{11, 12},
-					AssociatedChampions: []int{ID},
-					Map:                 "any",
-					Mode:                "any",
-					PreferredItemSlots:  []string{},
-					Sortrank:            1,
-					StartedFrom:         "blank",
-					Type:                "custom",
-					Blocks:              makeBuildBlocksFromSet(resp.Summary.Items.Pick),
-				}
-				ret.ItemBuilds = append(ret.ItemBuilds, mostCommonBuild)
-
-				ch <- ret
-				fmt.Printf("[lolalytics] Fetched: %s@%s \n", champion.Name, resp.Header.Lane)
+		go func() {
+			ret, err := makeBuild(champion, query, sourceVersion, timestamp, cnt)
+			if err == nil {
+				ch <- *ret
 			}
 
-			defer wg.Done()
-		}(champion, query, cnt)
+			wg.Done()
+		}()
 	}
 
 	wg.Wait()
 	close(ch)
+
+	for item := range ch {
+		fmt.Println(item.ItemBuilds)
+	}
 
 	duration := time.Since(start)
 
