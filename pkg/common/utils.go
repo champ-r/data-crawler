@@ -195,11 +195,16 @@ func GetRunesReforged(version string) (map[int]*RespRuneItem, *[]RuneSlot, error
 	return data, &resp, nil
 }
 
-func GetKeys(data interface{}) []string {
-	v := reflect.ValueOf(data)
-	keys := make([]string, v.NumField())
-	for i := 0; i < v.NumField(); i++ {
-		keys[i] = fmt.Sprintf("%v", v.Field(i).Interface())
+func GetKeys(v interface{}) []string {
+	var keys []string
+	value := reflect.ValueOf(v)
+	if value.Kind() == reflect.Map {
+		for _, v := range value.MapKeys() {
+			if v.Kind() == reflect.String {
+				keys = append(keys, v.String())
+			}
+		}
 	}
+
 	return keys
 }

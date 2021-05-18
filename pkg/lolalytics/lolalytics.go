@@ -108,7 +108,7 @@ func makeBuildBlocksFromSet(data IItems) []common.ItemBuildBlockItem {
 	return blocks
 }
 
-func makeBuild(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int) (*common.ChampionDataItem, error) {
+func makeBuild(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int, isDefaultTask bool) (*[]common.ChampionDataItem, error) {
 	body, err := common.MakeRequest(ApiUrl + "/mega?" + query)
 
 	if err != nil {
@@ -119,10 +119,11 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	var resp IChampionData
 	_ = json.Unmarshal(body, &resp)
 	ID, _ := strconv.Atoi(champion.Key)
-	defaultLane := resp.Header.Lane
+	curLane := resp.Header.Lane
 
-	ret := &common.ChampionDataItem{
-		Position:  defaultLane,
+	var builds []common.ChampionDataItem
+	defaultBuild := common.ChampionDataItem{
+		Position:  curLane,
 		Index:     cnt,
 		Id:        champion.Key,
 		Version:   sourceVersion,
@@ -130,9 +131,8 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		Alias:     champion.Id,
 		Name:      champion.Name,
 	}
-
 	highestWinBuild := common.ItemBuild{
-		Title:               "[lolalytics](Gold+) Highest Win@" + defaultLane + ", " + champion.Name + " " + sourceVersion,
+		Title:               "[lolalytics](Gold+) Highest Win@" + curLane + ", " + champion.Name + " " + sourceVersion,
 		AssociatedMaps:      []int{11, 12},
 		AssociatedChampions: []int{ID},
 		Map:                 "any",
@@ -143,10 +143,9 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		Type:                "custom",
 		Blocks:              makeBuildBlocksFromSet(resp.Summary.Items.Win),
 	}
-	ret.ItemBuilds = append(ret.ItemBuilds, highestWinBuild)
-
+	defaultBuild.ItemBuilds = append(defaultBuild.ItemBuilds, highestWinBuild)
 	mostCommonBuild := common.ItemBuild{
-		Title:               "[lolalytics](Gold+) Most Common@" + defaultLane + ", " + champion.Name + " " + sourceVersion,
+		Title:               "[lolalytics](Gold+) Most Common@" + curLane + ", " + champion.Name + " " + sourceVersion,
 		AssociatedMaps:      []int{11, 12},
 		AssociatedChampions: []int{ID},
 		Map:                 "any",
@@ -157,18 +156,47 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		Type:                "custom",
 		Blocks:              makeBuildBlocksFromSet(resp.Summary.Items.Pick),
 	}
-	ret.ItemBuilds = append(ret.ItemBuilds, mostCommonBuild)
+	defaultBuild.ItemBuilds = append(defaultBuild.ItemBuilds, mostCommonBuild)
+	builds = append(builds, defaultBuild)
 
-	lanes := common.GetKeys(resp.Nav.Lanes)
-	var restLanes []string
-	for _, lane := range lanes {
-		if lane != defaultLane && resp.Nav.Lanes[lane] >= 2.5 {
-			restLanes = append(restLanes, lane)
+	if isDefaultTask {
+		var restLanes []string
+		for _, lane := range common.GetKeys(resp.Nav.Lanes) {
+			if (lane != curLane) && (resp.Nav.Lanes[lane] >= 5) {
+				restLanes = append(restLanes, lane)
+			}
+		}
+
+		if len(restLanes) > 0 {
+			wg := new(sync.WaitGroup)
+			ch := make(chan []common.ChampionDataItem, len(restLanes))
+
+			for _, l := range restLanes {
+				wg.Add(1)
+
+				go func(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int, l string) {
+					q := query + "&lane=" + l
+					r, _ := makeBuild(champion, q, sourceVersion, timestamp, cnt, false)
+					if r != nil {
+						fmt.Println("got: ", champion.Name, l)
+						ch <- *r
+					}
+				}(champion, query, sourceVersion, timestamp, cnt, l)
+			}
+
+			wg.Wait()
+			close(ch)
+
+			if isDefaultTask {
+				for d := range ch {
+					builds = append(builds, d...)
+				}
+			}
 		}
 	}
 
-	fmt.Printf("[lolalytics] Fetched: %s@%s \n", champion.Name, resp.Header.Lane)
-	return ret, nil
+	fmt.Printf("[lolalytics] Fetched: %s@%s \n", champion.Name, curLane)
+	return &builds, nil
 }
 
 func Import(championAliasList map[string]common.ChampionItem, timestamp int64, debug bool) string {
@@ -200,10 +228,10 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64, d
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
-	ch := make(chan common.ChampionDataItem, len(cIds)*3)
+	ch := make(chan []common.ChampionDataItem, len(cIds))
 
 	for _, cid := range cIds {
-		if debug && cnt == 7 {
+		if debug && cnt == 5 {
 			break
 		}
 
@@ -219,9 +247,9 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64, d
 		query := queryMaker(cid, "default")
 
 		go func() {
-			ret, err := makeBuild(champion, query, sourceVersion, timestamp, cnt)
+			builds, err := makeBuild(champion, query, sourceVersion, timestamp, cnt, true)
 			if err == nil {
-				ch <- *ret
+				ch <- *builds
 			}
 
 			wg.Done()
@@ -232,7 +260,7 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64, d
 	close(ch)
 
 	for item := range ch {
-		fmt.Println(item.ItemBuilds)
+		fmt.Println(item)
 	}
 
 	duration := time.Since(start)
