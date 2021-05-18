@@ -9,6 +9,8 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -207,4 +209,22 @@ func GetKeys(v interface{}) []string {
 
 func GetPrimaryIdForRune(id int, runeLookUp IRuneLookUp) int {
 	return runeLookUp[id].Style
+}
+
+func Write2Folder(result [][]ChampionDataItem, pkgName string, timestamp int64, sourceVersion string, officialVer string) {
+	outputPath := filepath.Join(".", "output", pkgName)
+	_ = os.MkdirAll(outputPath, os.ModePerm)
+
+	for _, data := range result {
+		fileName := outputPath + "/" + data[0].Alias + ".json"
+		_ = SaveJSON(fileName, data)
+	}
+
+	pkg, _ := GenPkgInfo("tpl/package.json", PkgInfo{
+		Timestamp:       timestamp,
+		SourceVersion:   sourceVersion,
+		OfficialVersion: officialVer,
+		PkgName:         pkgName,
+	})
+	_ = ioutil.WriteFile("output/"+pkgName+"/package.json", []byte(pkg), 0644)
 }

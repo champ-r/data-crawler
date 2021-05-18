@@ -57,7 +57,7 @@ func main() {
 	if *mbFlag {
 		fmt.Println("[CMD] Fetch data from murderbridge.com")
 		go func() {
-			ch <- mb.Import(allChampionData.Data, timestamp, runeLoopUp, allRunes)
+			ch <- mb.Import(allChampionData.Data, timestamp, runeLoopUp, allRunes, *debugFlag)
 		}()
 
 		mbRet = <-ch
@@ -67,7 +67,7 @@ func main() {
 	if *laFlag {
 		fmt.Println("[CMD] Fetch data from lolalytics.com")
 		go func() {
-			ch <- la.Import(allChampionData.Data, timestamp, runeLoopUp, *debugFlag)
+			ch <- la.Import(allChampionData.Data, officialVer, timestamp, runeLoopUp, *debugFlag)
 		}()
 
 		laRet = <-ch

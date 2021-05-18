@@ -17,6 +17,7 @@ var patchReg = regexp.MustCompile("&patch=((\\d+\\.)+\\d+?)&")
 
 const ApiUrl = "https://apix1.op.lol"
 const MinimumPickRate = 5
+const LaName = "lolalytics"
 
 func makeQuery(query string) func(string, string) string {
 	oldQ := query
@@ -117,7 +118,7 @@ func concatRuneIds(pri []int, sec []int, mod []int) []int {
 	return ids
 }
 
-func makeBuild(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int, fetchMore bool, runeLookUp common.IRuneLookUp) (*[]common.ChampionDataItem, error) {
+func makeBuild(champion common.ChampionItem, query string, sourceVersion string, officialVer string, timestamp int64, cnt int, fetchMore bool, runeLookUp common.IRuneLookUp) (*[]common.ChampionDataItem, error) {
 	body, err := common.MakeRequest(ApiUrl + "/mega?" + query)
 
 	if err != nil {
@@ -132,13 +133,14 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 
 	var builds []common.ChampionDataItem
 	defaultBuild := common.ChampionDataItem{
-		Position:  curLane,
-		Index:     cnt,
-		Id:        champion.Key,
-		Version:   sourceVersion,
-		Timestamp: timestamp,
-		Alias:     champion.Id,
-		Name:      champion.Name,
+		Position:        curLane,
+		Index:           cnt,
+		Id:              champion.Key,
+		Version:         sourceVersion,
+		Timestamp:       timestamp,
+		Alias:           champion.Id,
+		Name:            champion.Name,
+		OfficialVersion: officialVer,
 	}
 
 	highestWinBuild := common.ItemBuild{
@@ -208,7 +210,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 
 				go func(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int, l string) {
 					q := query + "&lane=" + l
-					r, _ := makeBuild(champion, q, sourceVersion, timestamp, cnt, false, runeLookUp)
+					r, _ := makeBuild(champion, q, sourceVersion, officialVer, timestamp, cnt, false, runeLookUp)
 					if r != nil {
 						fmt.Println("got: ", champion.Name, l)
 						ch <- *r
@@ -231,7 +233,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	return &builds, nil
 }
 
-func Import(championAliasList map[string]common.ChampionItem, timestamp int64, runeLookUp common.IRuneLookUp, debug bool) string {
+func Import(championAliasList map[string]common.ChampionItem, officialVer string, timestamp int64, runeLookUp common.IRuneLookUp, debug bool) string {
 	start := time.Now()
 	fmt.Println("🌉 [lolalytics]: Start...")
 
@@ -279,7 +281,7 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64, r
 		query := queryMaker(cid, "default")
 
 		go func() {
-			builds, err := makeBuild(champion, query, sourceVersion, timestamp, cnt, true, runeLookUp)
+			builds, err := makeBuild(champion, query, sourceVersion, officialVer, timestamp, cnt, true, runeLookUp)
 			if err == nil {
 				ch <- *builds
 			}
@@ -291,11 +293,12 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64, r
 	wg.Wait()
 	close(ch)
 
-	for item := range ch {
-		fmt.Println(item)
+	var data [][]common.ChampionDataItem
+	for i := range ch {
+		data = append(data, i)
 	}
+	common.Write2Folder(data, LaName, timestamp, sourceVersion, officialVer)
 
 	duration := time.Since(start)
-
 	return fmt.Sprintf("🟢 [lolalytics.com] Finished, took: %s.", duration)
 }
