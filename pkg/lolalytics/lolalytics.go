@@ -109,7 +109,15 @@ func makeBuildBlocksFromSet(data IItems) []common.ItemBuildBlockItem {
 	return blocks
 }
 
-func makeBuild(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int, fetchMore bool) (*[]common.ChampionDataItem, error) {
+func concatRuneIds(pri []int, sec []int, mod []int) []int {
+	var ids []int
+	ids = append(ids, pri...)
+	ids = append(ids, sec...)
+	ids = append(ids, mod...)
+	return ids
+}
+
+func makeBuild(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int, fetchMore bool, runeLookUp common.IRuneLookUp) (*[]common.ChampionDataItem, error) {
 	body, err := common.MakeRequest(ApiUrl + "/mega?" + query)
 
 	if err != nil {
@@ -132,6 +140,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		Alias:     champion.Id,
 		Name:      champion.Name,
 	}
+
 	highestWinBuild := common.ItemBuild{
 		Title:               "[lolalytics](Gold+) Highest Win@" + curLane + ", " + champion.Name + " " + sourceVersion,
 		AssociatedMaps:      []int{11, 12},
@@ -158,6 +167,28 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		Blocks:              makeBuildBlocksFromSet(resp.Summary.Items.Pick),
 	}
 	defaultBuild.ItemBuilds = append(defaultBuild.ItemBuilds, mostCommonBuild)
+
+	highestWinRune := common.RuneItem{
+		Alias:           champion.Id,
+		Name:            "[lolalytics](Gold+) Highest Win " + champion.Name + " " + sourceVersion,
+		Position:        curLane,
+		WinRate:         fmt.Sprintf("%v%", resp.Summary.Runes.Win.Wr),
+		SelectedPerkIds: concatRuneIds(resp.Summary.Runes.Win.Set.Pri, resp.Summary.Runes.Win.Set.Sec, resp.Summary.Runes.Win.Set.Mod),
+		PrimaryStyleId:  common.GetPrimaryIdForRune(resp.Summary.Runes.Win.Set.Pri[0], runeLookUp),
+		SubStyleId:      common.GetPrimaryIdForRune(resp.Summary.Runes.Win.Set.Sec[0], runeLookUp),
+	}
+	defaultBuild.Runes = append(defaultBuild.Runes, highestWinRune)
+	mostCommonRune := common.RuneItem{
+		Alias:           champion.Id,
+		Name:            "[lolalytics](Gold+) Most common " + champion.Name + " " + sourceVersion,
+		Position:        curLane,
+		WinRate:         fmt.Sprintf("%v%", resp.Summary.Runes.Pick.Wr),
+		SelectedPerkIds: concatRuneIds(resp.Summary.Runes.Pick.Set.Pri, resp.Summary.Runes.Pick.Set.Sec, resp.Summary.Runes.Pick.Set.Mod),
+		PrimaryStyleId:  common.GetPrimaryIdForRune(resp.Summary.Runes.Pick.Set.Pri[0], runeLookUp),
+		SubStyleId:      common.GetPrimaryIdForRune(resp.Summary.Runes.Pick.Set.Sec[0], runeLookUp),
+	}
+	defaultBuild.Runes = append(defaultBuild.Runes, mostCommonRune)
+
 	builds = append(builds, defaultBuild)
 
 	if fetchMore {
@@ -177,7 +208,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 
 				go func(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int, l string) {
 					q := query + "&lane=" + l
-					r, _ := makeBuild(champion, q, sourceVersion, timestamp, cnt, false)
+					r, _ := makeBuild(champion, q, sourceVersion, timestamp, cnt, false, runeLookUp)
 					if r != nil {
 						fmt.Println("got: ", champion.Name, l)
 						ch <- *r
@@ -200,7 +231,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	return &builds, nil
 }
 
-func Import(championAliasList map[string]common.ChampionItem, timestamp int64, debug bool) string {
+func Import(championAliasList map[string]common.ChampionItem, timestamp int64, runeLookUp common.IRuneLookUp, debug bool) string {
 	start := time.Now()
 	fmt.Println("🌉 [lolalytics]: Start...")
 
@@ -232,7 +263,7 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64, d
 	ch := make(chan []common.ChampionDataItem, len(cIds))
 
 	for _, cid := range cIds {
-		if debug && cnt == 5 {
+		if debug && cnt == 7 {
 			break
 		}
 
@@ -248,7 +279,7 @@ func Import(championAliasList map[string]common.ChampionItem, timestamp int64, d
 		query := queryMaker(cid, "default")
 
 		go func() {
-			builds, err := makeBuild(champion, query, sourceVersion, timestamp, cnt, true)
+			builds, err := makeBuild(champion, query, sourceVersion, timestamp, cnt, true, runeLookUp)
 			if err == nil {
 				ch <- *builds
 			}

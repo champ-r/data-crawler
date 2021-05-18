@@ -166,7 +166,7 @@ func MakeBuildBlock(arr []string, name string) ItemBuildBlockItem {
 	return block
 }
 
-func GetRunesReforged(version string) (map[int]*RespRuneItem, *[]RuneSlot, error) {
+func GetRunesReforged(version string) (IRuneLookUp, IAllRunes, error) {
 	body, err := MakeRequest(DataDragonUrl + `/cdn/` + version + `/data/en_US/runesReforged.json`)
 	if err != nil {
 		return nil, nil, err
@@ -183,11 +183,7 @@ func GetRunesReforged(version string) (map[int]*RespRuneItem, *[]RuneSlot, error
 			for _, r := range s.Runes {
 				r.Style = slot.Id
 				r.Slot = j
-				if j == 0 {
-					r.Primary = true
-				} else {
-					r.Primary = false
-				}
+				r.Primary = j == 0
 				data[r.Id] = &r
 			}
 		}
@@ -207,4 +203,8 @@ func GetKeys(v interface{}) []string {
 	}
 
 	return keys
+}
+
+func GetPrimaryIdForRune(id int, runeLookUp IRuneLookUp) int {
+	return runeLookUp[id].Style
 }

@@ -26,6 +26,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	runeLoopUp, allRunes, err := common.GetRunesReforged(officialVer)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	var championAliasList = make(map[string]string)
 	for k, v := range allChampionData.Data {
@@ -53,7 +57,7 @@ func main() {
 	if *mbFlag {
 		fmt.Println("[CMD] Fetch data from murderbridge.com")
 		go func() {
-			ch <- mb.Import(allChampionData.Data, timestamp)
+			ch <- mb.Import(allChampionData.Data, timestamp, runeLoopUp, allRunes)
 		}()
 
 		mbRet = <-ch
@@ -63,7 +67,7 @@ func main() {
 	if *laFlag {
 		fmt.Println("[CMD] Fetch data from lolalytics.com")
 		go func() {
-			ch <- la.Import(allChampionData.Data, timestamp, *debugFlag)
+			ch <- la.Import(allChampionData.Data, timestamp, runeLoopUp, *debugFlag)
 		}()
 
 		laRet = <-ch

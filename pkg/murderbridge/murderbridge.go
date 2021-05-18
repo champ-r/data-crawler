@@ -380,13 +380,13 @@ func genChampionData(champion common.ChampionItem, version string, timestamp int
 	return &result, nil
 }
 
-func Import(championAliasList map[string]common.ChampionItem, timestamp int64) string {
+func Import(championAliasList map[string]common.ChampionItem, timestamp int64, rLookUp common.IRuneLookUp, runes common.IAllRunes) string {
 	start := time.Now()
 	fmt.Println("🌉 [MB]: Start...")
 
 	ver, _ := getLatestVersion()
 	items, _ = common.GetItemList(ver)
-	runeLoopUp, allRunes, _ = common.GetRunesReforged(ver)
+	runeLoopUp, allRunes = rLookUp, runes
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
