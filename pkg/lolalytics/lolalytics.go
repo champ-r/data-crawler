@@ -16,6 +16,7 @@ var epReg = regexp.MustCompile("ep=.*?region=all")
 var patchReg = regexp.MustCompile("&patch=((\\d+\\.)+\\d+?)&")
 
 const ApiUrl = "https://apix1.op.lol"
+const MinimumPickRate = 5
 
 func makeQuery(query string) func(string, string) string {
 	oldQ := query
@@ -108,7 +109,7 @@ func makeBuildBlocksFromSet(data IItems) []common.ItemBuildBlockItem {
 	return blocks
 }
 
-func makeBuild(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int, isDefaultTask bool) (*[]common.ChampionDataItem, error) {
+func makeBuild(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int, fetchMore bool) (*[]common.ChampionDataItem, error) {
 	body, err := common.MakeRequest(ApiUrl + "/mega?" + query)
 
 	if err != nil {
@@ -159,10 +160,10 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	defaultBuild.ItemBuilds = append(defaultBuild.ItemBuilds, mostCommonBuild)
 	builds = append(builds, defaultBuild)
 
-	if isDefaultTask {
+	if fetchMore {
 		var restLanes []string
 		for _, lane := range common.GetKeys(resp.Nav.Lanes) {
-			if (lane != curLane) && (resp.Nav.Lanes[lane] >= 5) {
+			if (lane != curLane) && (resp.Nav.Lanes[lane] >= MinimumPickRate) {
 				restLanes = append(restLanes, lane)
 			}
 		}
@@ -181,16 +182,16 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 						fmt.Println("got: ", champion.Name, l)
 						ch <- *r
 					}
+
+					wg.Done()
 				}(champion, query, sourceVersion, timestamp, cnt, l)
 			}
 
 			wg.Wait()
 			close(ch)
 
-			if isDefaultTask {
-				for d := range ch {
-					builds = append(builds, d...)
-				}
+			for d := range ch {
+				builds = append(builds, d...)
 			}
 		}
 	}
