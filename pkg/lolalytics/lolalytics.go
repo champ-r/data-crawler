@@ -229,7 +229,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		}
 	}
 
-	fmt.Printf("[lolalytics] Fetched: %s@%s \n", champion.Name, curLane)
+	fmt.Printf("[lolalytics] No.%d Fetched: %s@%s \n", cnt, champion.Name, curLane)
 	return &builds, nil
 }
 

@@ -48,11 +48,6 @@ func main() {
 		go func() {
 			ch <- op.ImportAram(allChampionData.Data, championAliasList, officialVer, timestamp, *debugFlag)
 		}()
-
-		opggRet = <-ch
-		opggAramRet = <-ch
-		fmt.Println(opggRet)
-		fmt.Println(opggAramRet)
 	}
 
 	if *mbFlag || *fetchAll {
@@ -60,9 +55,6 @@ func main() {
 		go func() {
 			ch <- mb.Import(allChampionData.Data, timestamp, runeLoopUp, allRunes, *debugFlag)
 		}()
-
-		mbRet = <-ch
-		fmt.Println(mbRet)
 	}
 
 	if *laFlag || *fetchAll {
@@ -70,7 +62,19 @@ func main() {
 		go func() {
 			ch <- la.Import(allChampionData.Data, officialVer, timestamp, runeLoopUp, *debugFlag)
 		}()
+	}
 
+	if *opggFlag || *fetchAll {
+		opggRet = <-ch
+		opggAramRet = <-ch
+		fmt.Println(opggRet)
+		fmt.Println(opggAramRet)
+	}
+	if *mbFlag || *fetchAll {
+		mbRet = <-ch
+		fmt.Println(mbRet)
+	}
+	if *laFlag || *fetchAll {
 		laRet = <-ch
 		fmt.Println(laRet)
 	}
