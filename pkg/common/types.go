@@ -154,3 +154,6 @@ type RuneSlot struct {
 		Runes []RespRuneItem `json:"runes"`
 	} `json:"slots"`
 }
+
+type IRuneLookUp map[int]*RespRuneItem
+type IAllRunes *[]RuneSlot

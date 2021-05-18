@@ -4,10 +4,7 @@ import (
 	"data-crawler/pkg/common"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
-	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"sync"
@@ -380,21 +377,21 @@ func genChampionData(champion common.ChampionItem, version string, timestamp int
 	return &result, nil
 }
 
-func ImportMB(championAliasList map[string]common.ChampionItem, timestamp int64) string {
+func Import(championAliasList map[string]common.ChampionItem, timestamp int64, rLookUp common.IRuneLookUp, runes common.IAllRunes, debug bool) string {
 	start := time.Now()
 	fmt.Println("🌉 [MB]: Start...")
 
 	ver, _ := getLatestVersion()
 	items, _ = common.GetItemList(ver)
-	runeLoopUp, allRunes, _ = common.GetRunesReforged(ver)
+	runeLoopUp, allRunes = rLookUp, runes
 
 	wg := new(sync.WaitGroup)
 	cnt := 0
 	ch := make(chan common.ChampionDataItem, len(championAliasList))
 	for _, champion := range championAliasList {
-		//if cnt > 3 {
-		//	break
-		//}
+		if debug && cnt > 5 {
+			break
+		}
 		if cnt > 0 && cnt%7 == 0 {
 			fmt.Println(`🌉 Take a break...`)
 			time.Sleep(time.Second * 5)
@@ -415,23 +412,13 @@ func ImportMB(championAliasList map[string]common.ChampionItem, timestamp int64)
 	wg.Wait()
 	close(ch)
 
-	outputPath := filepath.Join(".", "output", MurderBridge)
-	_ = os.MkdirAll(outputPath, os.ModePerm)
-
-	for data := range ch {
-		fileName := outputPath + "/" + data.Alias + ".json"
-		content := []common.ChampionDataItem{data}
-		_ = common.SaveJSON(fileName, content)
+	var data [][]common.ChampionDataItem
+	for i := range ch {
+		content := []common.ChampionDataItem{i}
+		data = append(data, content)
 	}
-	pkg, _ := common.GenPkgInfo("tpl/package.json", common.PkgInfo{
-		Timestamp:       timestamp,
-		SourceVersion:   ver,
-		OfficialVersion: ver,
-		PkgName:         MurderBridge,
-	})
-	_ = ioutil.WriteFile("output/"+MurderBridge+"/package.json", []byte(pkg), 0644)
+	common.Write2Folder(data, MurderBridge, timestamp, ver, ver)
 
 	duration := time.Since(start)
-
 	return fmt.Sprintf("🟢 [MB] Finished. Took %s.", duration)
 }

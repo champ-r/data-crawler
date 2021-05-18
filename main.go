@@ -2,7 +2,8 @@ package main
 
 import (
 	"data-crawler/pkg/common"
-	mb "data-crawler/pkg/mb"
+	la "data-crawler/pkg/lolalytics"
+	mb "data-crawler/pkg/murderbridge"
 	op "data-crawler/pkg/opgg"
 	"flag"
 	"fmt"
@@ -12,15 +13,21 @@ import (
 )
 
 func main() {
+	debugFlag := flag.Bool("debug", false, "only for debug")
 	opggFlag := flag.Bool("opgg", false, "Fetch & generate data from op.gg")
 	mbFlag := flag.Bool("mb", false, "Fetch & generate murderbridge.com")
-	debugFlag := flag.Bool("debug", false, "only for debug")
+	laFlag := flag.Bool("la", false, "Fetch & generate lolalytics.com")
+	fetchAll := flag.Bool("a", false, "Fetch & generate data from all available sources")
 
 	flag.Parse()
 	fmt.Println(os.Args)
 
 	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
 	allChampionData, officialVer, err := common.GetChampionList()
+	if err != nil {
+		log.Fatal(err)
+	}
+	runeLoopUp, allRunes, err := common.GetRunesReforged(officialVer)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,9 +38,9 @@ func main() {
 	}
 
 	ch := make(chan string)
-	var opggRet, mbRet, opggAramRet string
+	var opggRet, mbRet, opggAramRet, laRet string
 
-	if *opggFlag {
+	if *opggFlag || *fetchAll {
 		fmt.Println("[CMD] Fetch data from op.gg")
 		go func() {
 			ch <- op.Import(allChampionData.Data, championAliasList, officialVer, timestamp, *debugFlag)
@@ -43,21 +50,32 @@ func main() {
 		}()
 	}
 
-	if *mbFlag {
+	if *mbFlag || *fetchAll {
 		fmt.Println("[CMD] Fetch data from murderbridge.com")
 		go func() {
-			ch <- mb.ImportMB(allChampionData.Data, timestamp)
+			ch <- mb.Import(allChampionData.Data, timestamp, runeLoopUp, allRunes, *debugFlag)
 		}()
 	}
 
-	opggRet = <-ch
-	opggAramRet = <-ch
-	mbRet = <-ch
-	if opggRet != "" {
+	if *laFlag || *fetchAll {
+		fmt.Println("[CMD] Fetch data from lolalytics.com")
+		go func() {
+			ch <- la.Import(allChampionData.Data, officialVer, timestamp, runeLoopUp, *debugFlag)
+		}()
+	}
+
+	if *opggFlag || *fetchAll {
+		opggRet = <-ch
+		opggAramRet = <-ch
 		fmt.Println(opggRet)
 		fmt.Println(opggAramRet)
 	}
-	if mbRet != "" {
+	if *mbFlag || *fetchAll {
+		mbRet = <-ch
 		fmt.Println(mbRet)
+	}
+	if *laFlag || *fetchAll {
+		laRet = <-ch
+		fmt.Println(laRet)
 	}
 }

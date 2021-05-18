@@ -38,7 +38,7 @@ jobs:
       - name: Publish
         run: |
           npx npm-cli-adduser -u ${{ secrets.NPM_USER }} -e ${{ secrets.NPM_EMAIL }} -p ${{ secrets.NPM_PASS }}
-          ./publish.sh -mb -opgg
+          ./publish.sh -a
 
       - uses: actions/upload-artifact@v2
         with:

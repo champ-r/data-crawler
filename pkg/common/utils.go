@@ -9,6 +9,9 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -165,7 +168,7 @@ func MakeBuildBlock(arr []string, name string) ItemBuildBlockItem {
 	return block
 }
 
-func GetRunesReforged(version string) (map[int]*RespRuneItem, *[]RuneSlot, error) {
+func GetRunesReforged(version string) (IRuneLookUp, IAllRunes, error) {
 	body, err := MakeRequest(DataDragonUrl + `/cdn/` + version + `/data/en_US/runesReforged.json`)
 	if err != nil {
 		return nil, nil, err
@@ -182,14 +185,46 @@ func GetRunesReforged(version string) (map[int]*RespRuneItem, *[]RuneSlot, error
 			for _, r := range s.Runes {
 				r.Style = slot.Id
 				r.Slot = j
-				if j == 0 {
-					r.Primary = true
-				} else {
-					r.Primary = false
-				}
+				r.Primary = j == 0
 				data[r.Id] = &r
 			}
 		}
 	}
 	return data, &resp, nil
+}
+
+func GetKeys(v interface{}) []string {
+	var keys []string
+	value := reflect.ValueOf(v)
+	if value.Kind() == reflect.Map {
+		for _, v := range value.MapKeys() {
+			if v.Kind() == reflect.String {
+				keys = append(keys, v.String())
+			}
+		}
+	}
+
+	return keys
+}
+
+func GetPrimaryIdForRune(id int, runeLookUp IRuneLookUp) int {
+	return runeLookUp[id].Style
+}
+
+func Write2Folder(result [][]ChampionDataItem, pkgName string, timestamp int64, sourceVersion string, officialVer string) {
+	outputPath := filepath.Join(".", "output", pkgName)
+	_ = os.MkdirAll(outputPath, os.ModePerm)
+
+	for _, data := range result {
+		fileName := outputPath + "/" + data[0].Alias + ".json"
+		_ = SaveJSON(fileName, data)
+	}
+
+	pkg, _ := GenPkgInfo("tpl/package.json", PkgInfo{
+		Timestamp:       timestamp,
+		SourceVersion:   sourceVersion,
+		OfficialVersion: officialVer,
+		PkgName:         pkgName,
+	})
+	_ = ioutil.WriteFile("output/"+pkgName+"/package.json", []byte(pkg), 0644)
 }

@@ -23,7 +23,7 @@ jobs:
       - name: Build & run
         run: |
           go build -v .
-          ./data-crawler -mb -opgg
+          ./data-crawler -a
 
       - uses: actions/upload-artifact@v2
         with:
