@@ -17,6 +17,7 @@ func main() {
 	opggFlag := flag.Bool("opgg", false, "Fetch & generate data from op.gg")
 	mbFlag := flag.Bool("mb", false, "Fetch & generate murderbridge.com")
 	laFlag := flag.Bool("la", false, "Fetch & generate lolalytics.com")
+	fetchAll := flag.Bool("a", false, "Fetch & generate data from all available sources")
 
 	flag.Parse()
 	fmt.Println(os.Args)
@@ -39,7 +40,7 @@ func main() {
 	ch := make(chan string)
 	var opggRet, mbRet, opggAramRet, laRet string
 
-	if *opggFlag {
+	if *opggFlag || *fetchAll {
 		fmt.Println("[CMD] Fetch data from op.gg")
 		go func() {
 			ch <- op.Import(allChampionData.Data, championAliasList, officialVer, timestamp, *debugFlag)
@@ -54,7 +55,7 @@ func main() {
 		fmt.Println(opggAramRet)
 	}
 
-	if *mbFlag {
+	if *mbFlag || *fetchAll {
 		fmt.Println("[CMD] Fetch data from murderbridge.com")
 		go func() {
 			ch <- mb.Import(allChampionData.Data, timestamp, runeLoopUp, allRunes, *debugFlag)
@@ -64,7 +65,7 @@ func main() {
 		fmt.Println(mbRet)
 	}
 
-	if *laFlag {
+	if *laFlag || *fetchAll {
 		fmt.Println("[CMD] Fetch data from lolalytics.com")
 		go func() {
 			ch <- la.Import(allChampionData.Data, officialVer, timestamp, runeLoopUp, *debugFlag)
