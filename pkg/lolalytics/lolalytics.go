@@ -13,17 +13,18 @@ import (
 var cidReg = regexp.MustCompile("&cid=\\d+?&")
 var laneReg = regexp.MustCompile("&lane=[a-zA-Z]+?&")
 var epReg = regexp.MustCompile("ep=.*?region=all")
+var tierReg = regexp.MustCompile("&tier=[a-zA-Z_]+&")
 var patchReg = regexp.MustCompile("&patch=((\\d+\\.)+\\d+?)&")
 
 const ApiUrl = "https://apix1.op.lol"
 const MinimumPickRate = 5
-const LaName = "lolalytics"
 
-func makeQuery(query string) func(string, string) string {
+func makeQuery(query string) func(string, string, string) string {
 	oldQ := query
-	return func(cid string, lane string) string {
+	return func(cid string, lane string, tier string) string {
 		q := cidReg.ReplaceAllString(oldQ, "&cid="+cid+"&")
 		q = laneReg.ReplaceAllString(q, "&lane="+lane+"&")
+		q = tierReg.ReplaceAllString(q, "&tier="+tier+"&")
 		return q
 	}
 }
@@ -118,7 +119,7 @@ func concatRuneIds(pri []int, sec []int, mod []int) []int {
 	return ids
 }
 
-func makeBuild(champion common.ChampionItem, query string, sourceVersion string, officialVer string, timestamp int64, cnt int, fetchMore bool, runeLookUp common.IRuneLookUp) (*[]common.ChampionDataItem, error) {
+func makeBuild(champion common.ChampionItem, query string, sourceVersion string, officialVer string, timestamp int64, cnt int, fetchMore bool, runeLookUp common.IRuneLookUp, aram bool) (*[]common.ChampionDataItem, error) {
 	body, err := common.MakeRequest(ApiUrl + "/mega?" + query)
 
 	if err != nil {
@@ -143,9 +144,15 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		OfficialVersion: officialVer,
 	}
 
+	buildTitleSuffix := curLane + ", Gold+, " + champion.Name + " " + sourceVersion
+	associatedMaps := []int{11, 12}
+	if aram {
+		buildTitleSuffix = "ARAM, Gold+, " + champion.Name + " " + sourceVersion
+		associatedMaps = []int{12}
+	}
 	highestWinBuild := common.ItemBuild{
-		Title:               "[lolalytics](Gold+) Highest Win@" + curLane + ", " + champion.Name + " " + sourceVersion,
-		AssociatedMaps:      []int{11, 12},
+		Title:               "[lolalytics] Highest Win@" + buildTitleSuffix,
+		AssociatedMaps:      associatedMaps,
 		AssociatedChampions: []int{ID},
 		Map:                 "any",
 		Mode:                "any",
@@ -157,8 +164,8 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	}
 	defaultBuild.ItemBuilds = append(defaultBuild.ItemBuilds, highestWinBuild)
 	mostCommonBuild := common.ItemBuild{
-		Title:               "[lolalytics](Gold+) Most Common@" + curLane + ", " + champion.Name + " " + sourceVersion,
-		AssociatedMaps:      []int{11, 12},
+		Title:               "[lolalytics] Most Common@" + buildTitleSuffix,
+		AssociatedMaps:      associatedMaps,
 		AssociatedChampions: []int{ID},
 		Map:                 "any",
 		Mode:                "any",
@@ -170,9 +177,13 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	}
 	defaultBuild.ItemBuilds = append(defaultBuild.ItemBuilds, mostCommonBuild)
 
+	runeTitleSuffix := ", Gold+," + champion.Name + " " + sourceVersion
+	if aram {
+		runeTitleSuffix = "@ARAM, Gold+, " + champion.Name + " " + sourceVersion
+	}
 	highestWinRune := common.RuneItem{
 		Alias:           champion.Id,
-		Name:            "[lolalytics](Gold+) Highest Win " + champion.Name + " " + sourceVersion,
+		Name:            "[lolalytics] Highest Win" + runeTitleSuffix,
 		Position:        curLane,
 		WinRate:         fmt.Sprintf("%v%%", resp.Summary.Runes.Win.Wr),
 		SelectedPerkIds: concatRuneIds(resp.Summary.Runes.Win.Set.Pri, resp.Summary.Runes.Win.Set.Sec, resp.Summary.Runes.Win.Set.Mod),
@@ -182,7 +193,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	defaultBuild.Runes = append(defaultBuild.Runes, highestWinRune)
 	mostCommonRune := common.RuneItem{
 		Alias:           champion.Id,
-		Name:            "[lolalytics](Gold+) Most common " + champion.Name + " " + sourceVersion,
+		Name:            "[lolalytics] Most Common" + runeTitleSuffix,
 		Position:        curLane,
 		WinRate:         fmt.Sprintf("%v%%", resp.Summary.Runes.Pick.Wr),
 		SelectedPerkIds: concatRuneIds(resp.Summary.Runes.Pick.Set.Pri, resp.Summary.Runes.Pick.Set.Sec, resp.Summary.Runes.Pick.Set.Mod),
@@ -193,7 +204,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 
 	builds = append(builds, defaultBuild)
 
-	if fetchMore {
+	if fetchMore && !aram {
 		var restLanes []string
 		for _, lane := range common.GetKeys(resp.Nav.Lanes) {
 			if (lane != curLane) && (resp.Nav.Lanes[lane] >= MinimumPickRate) {
@@ -210,7 +221,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 
 				go func(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int, l string) {
 					q := query + "&lane=" + l
-					r, _ := makeBuild(champion, q, sourceVersion, officialVer, timestamp, cnt, false, runeLookUp)
+					r, _ := makeBuild(champion, q, sourceVersion, officialVer, timestamp, cnt, false, runeLookUp, aram)
 					if r != nil {
 						ch <- *r
 					}
@@ -228,16 +239,24 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		}
 	}
 
-	fmt.Printf("[lolalytics] No.%d Fetched: %s@%s \n", cnt, champion.Name, curLane)
+	additionalText := ""
+	if aram {
+		additionalText = "(ARAM mode)"
+	}
+	fmt.Printf("[lolalytics] No.%d Fetched: %s@%s %s\n", cnt, champion.Name, curLane, additionalText)
 	return &builds, nil
 }
 
-func Import(championAliasList map[string]common.ChampionItem, officialVer string, timestamp int64, runeLookUp common.IRuneLookUp, debug bool) string {
+func Import(championAliasList map[string]common.ChampionItem, officialVer string, timestamp int64, runeLookUp common.IRuneLookUp, aram bool, debug bool) string {
 	start := time.Now()
 	fmt.Println("🌉 [lolalytics]: Start...")
 
+	buildUrl := "https://lolalytics.com/lol/rengar/build/"
+	if aram {
+		buildUrl = "https://lolalytics.com/lol/rengar/aram/build/"
+	}
 	// get initial patch version/ep etc.
-	body, err := common.MakeRequest("https://lolalytics.com/lol/rengar/build/")
+	body, err := common.MakeRequest(buildUrl)
 	if err != nil {
 		return err.Error()
 	}
@@ -248,7 +267,7 @@ func Import(championAliasList map[string]common.ChampionItem, officialVer string
 	sourceVersion := getSourceVersion(epQuery)
 	queryMaker := makeQuery(epQuery)
 
-	q := queryMaker("103", "middle")
+	q := queryMaker("103", "middle", "gold_plus")
 	tierList, err := getTierList(q)
 	if err != nil {
 		return err.Error()
@@ -277,10 +296,10 @@ func Import(championAliasList map[string]common.ChampionItem, officialVer string
 		wg.Add(1)
 
 		champion := getChampionById(cid, championAliasList)
-		query := queryMaker(cid, "default")
+		query := queryMaker(cid, "default", "gold_plus")
 
 		go func() {
-			builds, err := makeBuild(champion, query, sourceVersion, officialVer, timestamp, cnt, true, runeLookUp)
+			builds, err := makeBuild(champion, query, sourceVersion, officialVer, timestamp, cnt, true, runeLookUp, aram)
 			if err == nil {
 				ch <- *builds
 			}
@@ -296,8 +315,15 @@ func Import(championAliasList map[string]common.ChampionItem, officialVer string
 	for i := range ch {
 		data = append(data, i)
 	}
-	common.Write2Folder(data, LaName, timestamp, sourceVersion, officialVer)
+	pkgName := `lolalytics`
+	if aram {
+		pkgName = `lolalytics-aram`
+	}
+	common.Write2Folder(data, pkgName, timestamp, sourceVersion, officialVer)
 
 	duration := time.Since(start)
+	if aram {
+		return fmt.Sprintf("🟢 [lolalytics.com][ARAM] Finished, took: %s.", duration)
+	}
 	return fmt.Sprintf("🟢 [lolalytics.com] Finished, took: %s.", duration)
 }
