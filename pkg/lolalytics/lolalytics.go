@@ -17,7 +17,6 @@ var patchReg = regexp.MustCompile("&patch=((\\d+\\.)+\\d+?)&")
 
 const ApiUrl = "https://apix1.op.lol"
 const MinimumPickRate = 5
-const LaName = "lolalytics"
 
 func makeQuery(query string) func(string, string) string {
 	oldQ := query
@@ -304,7 +303,11 @@ func Import(championAliasList map[string]common.ChampionItem, officialVer string
 	for i := range ch {
 		data = append(data, i)
 	}
-	common.Write2Folder(data, LaName, timestamp, sourceVersion, officialVer)
+	pkgName := `lolalytics`
+	if aram {
+		pkgName = `lolalytics-aram`
+	}
+	common.Write2Folder(data, pkgName, timestamp, sourceVersion, officialVer)
 
 	duration := time.Since(start)
 	return fmt.Sprintf("🟢 [lolalytics.com] Finished, took: %s.", duration)
