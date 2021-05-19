@@ -21,3 +21,6 @@ $npm publish --access public
 
 cd ../lolalytics
 $npm publish --access public
+
+cd ../lolalytics-aram
+$npm publish --access public
