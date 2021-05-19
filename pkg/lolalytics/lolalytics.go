@@ -177,7 +177,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	}
 	defaultBuild.ItemBuilds = append(defaultBuild.ItemBuilds, mostCommonBuild)
 
-	runeTitleSuffix := ", Gold+," + champion.Name + " " + sourceVersion
+	runeTitleSuffix := ", Gold+, " + champion.Name + " " + sourceVersion
 	if aram {
 		runeTitleSuffix = "@ARAM, Gold+, " + champion.Name + " " + sourceVersion
 	}
