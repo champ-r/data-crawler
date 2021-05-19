@@ -232,12 +232,16 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	return &builds, nil
 }
 
-func Import(championAliasList map[string]common.ChampionItem, officialVer string, timestamp int64, runeLookUp common.IRuneLookUp, debug bool) string {
+func Import(championAliasList map[string]common.ChampionItem, officialVer string, timestamp int64, runeLookUp common.IRuneLookUp, aram bool, debug bool) string {
 	start := time.Now()
 	fmt.Println("🌉 [lolalytics]: Start...")
 
+	buildUrl := "https://lolalytics.com/lol/rengar/build/"
+	if aram {
+		buildUrl = "https://lolalytics.com/lol/rengar/aram/build/"
+	}
 	// get initial patch version/ep etc.
-	body, err := common.MakeRequest("https://lolalytics.com/lol/rengar/build/")
+	body, err := common.MakeRequest(buildUrl)
 	if err != nil {
 		return err.Error()
 	}

@@ -38,7 +38,7 @@ func main() {
 	}
 
 	ch := make(chan string)
-	var opggRet, mbRet, opggAramRet, laRet string
+	var opggRet, mbRet, opggAramRet, laRet, laAramRet string
 
 	if *opggFlag || *fetchAll {
 		fmt.Println("[CMD] Fetch data from op.gg")
@@ -60,7 +60,10 @@ func main() {
 	if *laFlag || *fetchAll {
 		fmt.Println("[CMD] Fetch data from lolalytics.com")
 		go func() {
-			ch <- la.Import(allChampionData.Data, officialVer, timestamp, runeLoopUp, *debugFlag)
+			ch <- la.Import(allChampionData.Data, officialVer, timestamp, runeLoopUp, false, *debugFlag)
+		}()
+		go func() {
+			ch <- la.Import(allChampionData.Data, officialVer, timestamp, runeLoopUp, true, *debugFlag)
 		}()
 	}
 
@@ -76,6 +79,8 @@ func main() {
 	}
 	if *laFlag || *fetchAll {
 		laRet = <-ch
+		laAramRet = <-ch
 		fmt.Println(laRet)
+		fmt.Println(laAramRet)
 	}
 }
