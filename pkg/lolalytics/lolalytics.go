@@ -13,16 +13,18 @@ import (
 var cidReg = regexp.MustCompile("&cid=\\d+?&")
 var laneReg = regexp.MustCompile("&lane=[a-zA-Z]+?&")
 var epReg = regexp.MustCompile("ep=.*?region=all")
+var tierReg = regexp.MustCompile("&tier=[a-zA-Z_]+&")
 var patchReg = regexp.MustCompile("&patch=((\\d+\\.)+\\d+?)&")
 
 const ApiUrl = "https://apix1.op.lol"
 const MinimumPickRate = 5
 
-func makeQuery(query string) func(string, string) string {
+func makeQuery(query string) func(string, string, string) string {
 	oldQ := query
-	return func(cid string, lane string) string {
+	return func(cid string, lane string, tier string) string {
 		q := cidReg.ReplaceAllString(oldQ, "&cid="+cid+"&")
 		q = laneReg.ReplaceAllString(q, "&lane="+lane+"&")
+		q = tierReg.ReplaceAllString(q, "&tier="+tier+"&")
 		return q
 	}
 }
@@ -263,7 +265,7 @@ func Import(championAliasList map[string]common.ChampionItem, officialVer string
 	sourceVersion := getSourceVersion(epQuery)
 	queryMaker := makeQuery(epQuery)
 
-	q := queryMaker("103", "middle")
+	q := queryMaker("103", "middle", "gold_plus")
 	tierList, err := getTierList(q)
 	if err != nil {
 		return err.Error()
@@ -292,7 +294,7 @@ func Import(championAliasList map[string]common.ChampionItem, officialVer string
 		wg.Add(1)
 
 		champion := getChampionById(cid, championAliasList)
-		query := queryMaker(cid, "default")
+		query := queryMaker(cid, "default", "gold_plus")
 
 		go func() {
 			builds, err := makeBuild(champion, query, sourceVersion, officialVer, timestamp, cnt, true, runeLookUp, aram)
