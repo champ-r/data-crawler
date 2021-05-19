@@ -87,11 +87,11 @@ func extractItemIds(items []IItemN) []int {
 
 func makeBuildBlocksFromSet(data IItems) []common.ItemBuildBlockItem {
 	var blocks []common.ItemBuildBlockItem
-	startingTitle := "Starting items, win rate " + fmt.Sprintf("%.2f%", data.Start.Wr)
+	startingTitle := "Starting items, win rate " + fmt.Sprintf("%.2f%%", data.Start.Wr)
 	startingBlock := makeBlock(startingTitle, data.Start.Set)
 	blocks = append(blocks, startingBlock)
 
-	coreTitle := "Core items, win rate " + fmt.Sprintf("%.2f%", data.Core.Wr)
+	coreTitle := "Core items, win rate " + fmt.Sprintf("%.2f%%", data.Core.Wr)
 	coreBlock := makeBlock(coreTitle, data.Core.Set)
 	blocks = append(blocks, coreBlock)
 
@@ -174,7 +174,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		Alias:           champion.Id,
 		Name:            "[lolalytics](Gold+) Highest Win " + champion.Name + " " + sourceVersion,
 		Position:        curLane,
-		WinRate:         fmt.Sprintf("%v%", resp.Summary.Runes.Win.Wr),
+		WinRate:         fmt.Sprintf("%v%%", resp.Summary.Runes.Win.Wr),
 		SelectedPerkIds: concatRuneIds(resp.Summary.Runes.Win.Set.Pri, resp.Summary.Runes.Win.Set.Sec, resp.Summary.Runes.Win.Set.Mod),
 		PrimaryStyleId:  common.GetPrimaryIdForRune(resp.Summary.Runes.Win.Set.Pri[0], runeLookUp),
 		SubStyleId:      common.GetPrimaryIdForRune(resp.Summary.Runes.Win.Set.Sec[0], runeLookUp),
@@ -184,7 +184,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		Alias:           champion.Id,
 		Name:            "[lolalytics](Gold+) Most common " + champion.Name + " " + sourceVersion,
 		Position:        curLane,
-		WinRate:         fmt.Sprintf("%v%", resp.Summary.Runes.Pick.Wr),
+		WinRate:         fmt.Sprintf("%v%%", resp.Summary.Runes.Pick.Wr),
 		SelectedPerkIds: concatRuneIds(resp.Summary.Runes.Pick.Set.Pri, resp.Summary.Runes.Pick.Set.Sec, resp.Summary.Runes.Pick.Set.Mod),
 		PrimaryStyleId:  common.GetPrimaryIdForRune(resp.Summary.Runes.Pick.Set.Pri[0], runeLookUp),
 		SubStyleId:      common.GetPrimaryIdForRune(resp.Summary.Runes.Pick.Set.Sec[0], runeLookUp),
