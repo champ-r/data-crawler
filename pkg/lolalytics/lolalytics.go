@@ -189,6 +189,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		SelectedPerkIds: concatRuneIds(resp.Summary.Runes.Win.Set.Pri, resp.Summary.Runes.Win.Set.Sec, resp.Summary.Runes.Win.Set.Mod),
 		PrimaryStyleId:  common.GetPrimaryIdForRune(resp.Summary.Runes.Win.Set.Pri[0], runeLookUp),
 		SubStyleId:      common.GetPrimaryIdForRune(resp.Summary.Runes.Win.Set.Sec[0], runeLookUp),
+		PickCount:       resp.Summary.Runes.Win.N,
 	}
 	defaultBuild.Runes = append(defaultBuild.Runes, highestWinRune)
 	mostCommonRune := common.RuneItem{
@@ -199,6 +200,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		SelectedPerkIds: concatRuneIds(resp.Summary.Runes.Pick.Set.Pri, resp.Summary.Runes.Pick.Set.Sec, resp.Summary.Runes.Pick.Set.Mod),
 		PrimaryStyleId:  common.GetPrimaryIdForRune(resp.Summary.Runes.Pick.Set.Pri[0], runeLookUp),
 		SubStyleId:      common.GetPrimaryIdForRune(resp.Summary.Runes.Pick.Set.Sec[0], runeLookUp),
+		PickCount:       resp.Summary.Runes.Pick.N,
 	}
 	defaultBuild.Runes = append(defaultBuild.Runes, mostCommonRune)
 

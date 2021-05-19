@@ -105,7 +105,7 @@ type IChampionData struct {
 		Runes struct {
 			Pick struct {
 				Wr   float64 `json:"wr"`
-				N    float64 `json:"n"`
+				N    int `json:"n"`
 				Page struct {
 					Pri int `json:"pri"`
 					Sec int `json:"sec"`
@@ -118,7 +118,7 @@ type IChampionData struct {
 			} `json:"pick"`
 			Win struct {
 				Wr   float64 `json:"wr"`
-				N    float64 `json:"n"`
+				N    int `json:"n"`
 				Page struct {
 					Pri int `json:"pri"`
 					Sec int `json:"sec"`
