@@ -145,12 +145,14 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	}
 
 	buildTitleSuffix := curLane + ", Gold+, " + champion.Name + " " + sourceVersion
+	associatedMaps := []int{11, 12}
 	if aram {
-		buildTitleSuffix = "@aram, Gold+, " + champion.Name + " " + sourceVersion
+		buildTitleSuffix = "ARAM, Gold+, " + champion.Name + " " + sourceVersion
+		associatedMaps = []int{12}
 	}
 	highestWinBuild := common.ItemBuild{
 		Title:               "[lolalytics] Highest Win@" + buildTitleSuffix,
-		AssociatedMaps:      []int{11, 12},
+		AssociatedMaps:      associatedMaps,
 		AssociatedChampions: []int{ID},
 		Map:                 "any",
 		Mode:                "any",
@@ -163,7 +165,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	defaultBuild.ItemBuilds = append(defaultBuild.ItemBuilds, highestWinBuild)
 	mostCommonBuild := common.ItemBuild{
 		Title:               "[lolalytics] Most Common@" + buildTitleSuffix,
-		AssociatedMaps:      []int{11, 12},
+		AssociatedMaps:      associatedMaps,
 		AssociatedChampions: []int{ID},
 		Map:                 "any",
 		Mode:                "any",
@@ -177,7 +179,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 
 	runeTitleSuffix := ", Gold+," + champion.Name + " " + sourceVersion
 	if aram {
-		runeTitleSuffix = "@aram, Gold+, " + champion.Name + " " + sourceVersion
+		runeTitleSuffix = "@ARAM, Gold+, " + champion.Name + " " + sourceVersion
 	}
 	highestWinRune := common.RuneItem{
 		Alias:           champion.Id,
@@ -191,7 +193,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	defaultBuild.Runes = append(defaultBuild.Runes, highestWinRune)
 	mostCommonRune := common.RuneItem{
 		Alias:           champion.Id,
-		Name:            "[lolalytics] Most common" + runeTitleSuffix,
+		Name:            "[lolalytics] Most Common" + runeTitleSuffix,
 		Position:        curLane,
 		WinRate:         fmt.Sprintf("%v%%", resp.Summary.Runes.Pick.Wr),
 		SelectedPerkIds: concatRuneIds(resp.Summary.Runes.Pick.Set.Pri, resp.Summary.Runes.Pick.Set.Sec, resp.Summary.Runes.Pick.Set.Mod),
