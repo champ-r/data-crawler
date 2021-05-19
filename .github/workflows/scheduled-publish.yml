@@ -1,9 +1,9 @@
 name: Scheduled publish
 
 on:
-  push:
-    branches:
-      - master
+#  push:
+#    branches:
+#      - master
   create:
     tags:
       - v*

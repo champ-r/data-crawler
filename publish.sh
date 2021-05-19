@@ -9,6 +9,7 @@ cp output/index.json output/op.gg/
 cp output/index.json output/op.gg-aram/
 cp output/index.json output/murderbridge/
 cp output/index.json output/lolalytics/
+cp output/index.json output/lolalytics-aram/
 
 cd output/op.gg
 $npm publish --access public
