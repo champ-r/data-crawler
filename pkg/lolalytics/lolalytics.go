@@ -212,7 +212,6 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 					q := query + "&lane=" + l
 					r, _ := makeBuild(champion, q, sourceVersion, officialVer, timestamp, cnt, false, runeLookUp)
 					if r != nil {
-						fmt.Println("got: ", champion.Name, l)
 						ch <- *r
 					}
 
