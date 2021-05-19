@@ -118,7 +118,7 @@ func concatRuneIds(pri []int, sec []int, mod []int) []int {
 	return ids
 }
 
-func makeBuild(champion common.ChampionItem, query string, sourceVersion string, officialVer string, timestamp int64, cnt int, fetchMore bool, runeLookUp common.IRuneLookUp) (*[]common.ChampionDataItem, error) {
+func makeBuild(champion common.ChampionItem, query string, sourceVersion string, officialVer string, timestamp int64, cnt int, fetchMore bool, runeLookUp common.IRuneLookUp, aram bool) (*[]common.ChampionDataItem, error) {
 	body, err := common.MakeRequest(ApiUrl + "/mega?" + query)
 
 	if err != nil {
@@ -193,7 +193,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 
 	builds = append(builds, defaultBuild)
 
-	if fetchMore {
+	if fetchMore && !aram {
 		var restLanes []string
 		for _, lane := range common.GetKeys(resp.Nav.Lanes) {
 			if (lane != curLane) && (resp.Nav.Lanes[lane] >= MinimumPickRate) {
@@ -210,7 +210,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 
 				go func(champion common.ChampionItem, query string, sourceVersion string, timestamp int64, cnt int, l string) {
 					q := query + "&lane=" + l
-					r, _ := makeBuild(champion, q, sourceVersion, officialVer, timestamp, cnt, false, runeLookUp)
+					r, _ := makeBuild(champion, q, sourceVersion, officialVer, timestamp, cnt, false, runeLookUp, aram)
 					if r != nil {
 						ch <- *r
 					}
@@ -228,7 +228,11 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		}
 	}
 
-	fmt.Printf("[lolalytics] No.%d Fetched: %s@%s \n", cnt, champion.Name, curLane)
+	additionalText := ""
+	if aram {
+		additionalText = "(ARAM mode)"
+	}
+	fmt.Printf("[lolalytics] No.%d Fetched: %s@%s %s\n", cnt, champion.Name, curLane, additionalText)
 	return &builds, nil
 }
 
@@ -284,7 +288,7 @@ func Import(championAliasList map[string]common.ChampionItem, officialVer string
 		query := queryMaker(cid, "default")
 
 		go func() {
-			builds, err := makeBuild(champion, query, sourceVersion, officialVer, timestamp, cnt, true, runeLookUp)
+			builds, err := makeBuild(champion, query, sourceVersion, officialVer, timestamp, cnt, true, runeLookUp, aram)
 			if err == nil {
 				ch <- *builds
 			}
