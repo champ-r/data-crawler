@@ -310,5 +310,8 @@ func Import(championAliasList map[string]common.ChampionItem, officialVer string
 	common.Write2Folder(data, pkgName, timestamp, sourceVersion, officialVer)
 
 	duration := time.Since(start)
+	if aram {
+		return fmt.Sprintf("🟢 [lolalytics.com][ARAM] Finished, took: %s.", duration)
+	}
 	return fmt.Sprintf("🟢 [lolalytics.com] Finished, took: %s.", duration)
 }
