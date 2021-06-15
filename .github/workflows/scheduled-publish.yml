@@ -47,5 +47,4 @@ jobs:
         with:
           name: packages
           path: |
-            output/op.gg
-            output/murderbridge
+            output/*

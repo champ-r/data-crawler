@@ -255,7 +255,11 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 
 func Import(championAliasList map[string]common.ChampionItem, officialVer string, timestamp int64, runeLookUp common.IRuneLookUp, aram bool, debug bool) string {
 	start := time.Now()
-	fmt.Println("🌉 [lolalytics]: Start...")
+	if aram {
+		fmt.Println("🌉 [lolalytics-aram]: Start...")
+	} else {
+		fmt.Println("🌉 [lolalytics]: Start...")
+	}
 
 	buildUrl := "https://lolalytics.com/lol/rengar/build/"
 	if aram {
@@ -329,7 +333,7 @@ func Import(championAliasList map[string]common.ChampionItem, officialVer string
 
 	duration := time.Since(start)
 	if aram {
-		return fmt.Sprintf("🟢 [lolalytics.com][ARAM] Finished, took: %s.", duration)
+		return fmt.Sprintf("🟢 [lolalytics-aram] Finished, took: %s.", duration)
 	}
-	return fmt.Sprintf("🟢 [lolalytics.com] Finished, took: %s.", duration)
+	return fmt.Sprintf("🟢 [lolalytics] Finished, took: %s.", duration)
 }
