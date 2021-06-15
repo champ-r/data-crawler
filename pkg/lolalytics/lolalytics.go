@@ -144,14 +144,16 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 		OfficialVersion: officialVer,
 	}
 
-	buildTitleSuffix := curLane + ", Gold+, " + champion.Name + " " + sourceVersion
+	buildTitlePrefix := "[lolalytics]"
+	buildTitleSuffix := curLane + " " + champion.Name + " " + sourceVersion + " G+"
 	associatedMaps := []int{11, 12}
 	if aram {
-		buildTitleSuffix = "ARAM, Gold+, " + champion.Name + " " + sourceVersion
+		buildTitlePrefix = "[lolalytics-ARAM]"
+		buildTitleSuffix = champion.Name + " " + sourceVersion + " G+"
 		associatedMaps = []int{12}
 	}
 	highestWinBuild := common.ItemBuild{
-		Title:               "[lolalytics] Highest Win@" + buildTitleSuffix,
+		Title:               buildTitlePrefix + " Highest Win@" + buildTitleSuffix,
 		AssociatedMaps:      associatedMaps,
 		AssociatedChampions: []int{ID},
 		Map:                 "any",
@@ -164,7 +166,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	}
 	defaultBuild.ItemBuilds = append(defaultBuild.ItemBuilds, highestWinBuild)
 	mostCommonBuild := common.ItemBuild{
-		Title:               "[lolalytics] Most Common@" + buildTitleSuffix,
+		Title:               buildTitlePrefix + " Most Common@" + buildTitleSuffix,
 		AssociatedMaps:      associatedMaps,
 		AssociatedChampions: []int{ID},
 		Map:                 "any",
@@ -177,13 +179,15 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	}
 	defaultBuild.ItemBuilds = append(defaultBuild.ItemBuilds, mostCommonBuild)
 
-	runeTitleSuffix := ", Gold+, " + champion.Name + " " + sourceVersion
+	runeTitlePrefix := "[lolalytics]"
+	runeTitleSuffix := " " + champion.Name + " " + sourceVersion + " G+"
 	if aram {
-		runeTitleSuffix = "@ARAM, Gold+, " + champion.Name + " " + sourceVersion
+		runeTitlePrefix = "[lolalytics-ARAM]"
+		runeTitleSuffix = " " + champion.Name + " " + sourceVersion + " G+"
 	}
 	highestWinRune := common.RuneItem{
 		Alias:           champion.Id,
-		Name:            "[lolalytics] Highest Win" + runeTitleSuffix,
+		Name:            runeTitlePrefix + " Highest Win" + runeTitleSuffix,
 		Position:        curLane,
 		WinRate:         fmt.Sprintf("%v%%", resp.Summary.Runes.Win.Wr),
 		SelectedPerkIds: concatRuneIds(resp.Summary.Runes.Win.Set.Pri, resp.Summary.Runes.Win.Set.Sec, resp.Summary.Runes.Win.Set.Mod),
@@ -194,7 +198,7 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	defaultBuild.Runes = append(defaultBuild.Runes, highestWinRune)
 	mostCommonRune := common.RuneItem{
 		Alias:           champion.Id,
-		Name:            "[lolalytics] Most Common" + runeTitleSuffix,
+		Name:            runeTitlePrefix + " Most Common" + runeTitleSuffix,
 		Position:        curLane,
 		WinRate:         fmt.Sprintf("%v%%", resp.Summary.Runes.Pick.Wr),
 		SelectedPerkIds: concatRuneIds(resp.Summary.Runes.Pick.Set.Pri, resp.Summary.Runes.Pick.Set.Sec, resp.Summary.Runes.Pick.Set.Mod),
