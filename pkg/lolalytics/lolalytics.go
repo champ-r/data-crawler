@@ -3,6 +3,7 @@ package lolalytics
 import (
 	"data-crawler/pkg/common"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -131,6 +132,15 @@ func makeBuild(champion common.ChampionItem, query string, sourceVersion string,
 	_ = json.Unmarshal(body, &resp)
 	ID, _ := strconv.Atoi(champion.Key)
 	curLane := resp.Header.Lane
+
+	if resp.Summary.Sums == nil {
+		errMsg := "[lolalytics] Champion data not ready, " + champion.Name + " " + curLane
+		if aram {
+			errMsg = "[lolalytics-ARAM] Champion data not ready, " + champion.Name + " " + curLane
+		}
+		fmt.Println(errMsg)
+		return nil, errors.New(errMsg)
+	}
 
 	var builds []common.ChampionDataItem
 	defaultBuild := common.ChampionDataItem{
